@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EventStore.BufferManagement;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,10 +15,11 @@ namespace StreamRepository.FileSystem
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _folder;
+        BufferPool _bufferPool;
 
-
-        public FileRepository(DirectoryInfo folder)
+        public FileRepository(DirectoryInfo folder, BufferPool bufferPool)
         {
+            _bufferPool = bufferPool;
             _folder = folder;
             if (!folder.Exists)
                 folder.Create();
@@ -35,17 +37,20 @@ namespace StreamRepository.FileSystem
                 using (var stream = Open_Stream_For_Writing(year.Key))
                 {
                     var tail = header.Index;
-
+                   
+                    //using (var buffer = new BufferPoolStream(_bufferPool))
                     using (var buffer = new MemoryStream())
                     {
-                        using (var writer = new BinaryWriter(buffer))
+                       // var writer = new BinaryWriter(buffer, Encoding.Default, true);
+                        using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
                             foreach (var value in year)
                                 new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
                         stream.Seek(tail, SeekOrigin.Begin);
 
                         int writtenBytes = year.Count() * FramedValue.SizeInBytes();
-                        stream.Write(buffer.GetBuffer(), 0, writtenBytes);
+                        buffer.CopyTo(stream);
+                        //stream.Write(buffer.GetBuffer(), 0, writtenBytes);
 
                         tail = tail + writtenBytes;
                     }
@@ -171,8 +176,8 @@ namespace StreamRepository.FileSystem
         Stream Open_Stream_For_Writing(int year)
         {
             //return new FileStream(Get_Year_With_Caching(year).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
-            return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
-            //return Get_Year_With_Caching(year).Open(FileMode.Open);
+           // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
+           return Get_Year_With_Caching(year).Open(FileMode.Open);
         }
 
 

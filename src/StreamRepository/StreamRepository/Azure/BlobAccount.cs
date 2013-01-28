@@ -5,22 +5,25 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
 using StreamRepository.Azure;
+using EventStore.BufferManagement;
 
 namespace StreamRepository.Azure
 {
     public class BlobAccount : Account
     {
         CloudBlobContainer _container;
+        BufferPool _bufferPool;
 
         public BlobAccount(CloudBlobContainer container)
         {
             _container = container;
+            _bufferPool = new BufferPool();
         }
 
         public override Repository Build_Repository(string streamName)
         {
             var sub = _container.GetDirectoryReference(streamName);
-            return new AzureBlobRepository(sub);
+            return new AzureBlobRepository(sub, _bufferPool);
         }
         public override IEnumerable<string> Get_Streams()
         {

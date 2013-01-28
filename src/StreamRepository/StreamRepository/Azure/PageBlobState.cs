@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage;
+using EventStore.BufferManagement;
 
 namespace StreamRepository.Azure
 {
@@ -16,21 +18,27 @@ namespace StreamRepository.Azure
         int _lastPageIndex;
         int _offset;
         byte[] _lastPage = new byte[PageSize];
+        BufferPool _bufferPool;
 
-
-        public PageBlobState(CloudBlobDirectory directory, string name)
+        public PageBlobState(CloudBlobDirectory directory, string name, BufferPool bufferPool)
         {
             _blob = directory.GetPageBlobReference(name);
+            _index = directory.GetPageBlobReference(name + "-index");
+            _bufferPool = bufferPool;
+            Open();
+        }
+
+        public void Open()
+        {
             if (!_blob.Exists())
                 _blob.Create(0);
-            _index = directory.GetPageBlobReference(name + "-index");
             if (!_index.Exists())
                 _index.Create(PageSize);
 
             using (var stream = _index.OpenRead())
             {
-                var tmp = new byte[4];
-                stream.Read(tmp, 0, 4);
+                var tmp = new byte[PageSize];
+                stream.Read(tmp, 0, tmp.Length);
                 int length = BitConverter.ToInt32(tmp, 0);
                 _lastPageIndex = Math.DivRem(length, PageSize, out _offset);
             }
@@ -44,7 +52,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public async void Append(byte[] buffer, int start, int count)
+        public void AppendAsync(byte[] buffer, int start, int count)
         {
             Ensure_There_Is_Space_For(count, true);
 
@@ -60,8 +68,10 @@ namespace StreamRepository.Azure
 
                     Array.Copy(buffer, start, _lastPage, _offset, toCopy);
 
-                    using (var stream = new MemoryStream(_lastPage, 0, PageSize))
-                        _blob.WritePages(stream, _lastPageIndex * PageSize);
+                    _blob.WritePagesAsync(_lastPage, 0, PageSize, _lastPageIndex * PageSize);
+                    //using (var stream = new MemoryStream(_lastPage, 0, PageSize))
+                    //    _blob.WritePages(stream, _lastPageIndex * PageSize);
+
                     //payload.Write(_lastPage, 0, PageSize);
 
                     copied = toCopy;
@@ -74,8 +84,11 @@ namespace StreamRepository.Azure
 
                 if (fullPages > 0)
                 {
-                    using (var stream = new MemoryStream(buffer, start + copied, count - copied - rem))
-                        _blob.WritePages(stream, (_lastPageIndex + plusPage) * PageSize);
+                    _blob.WritePagesAsync(buffer, start + copied, count - copied - rem, (_lastPageIndex + plusPage) * PageSize);
+
+                    //using (var stream = new MemoryStream(buffer, start + copied, count - copied - rem))
+                    //    _blob.WritePages(stream, (_lastPageIndex + plusPage) * PageSize);
+
                     //payload.Write(buffer, start + copied, count - copied - rem);
                 }
 
@@ -84,13 +97,18 @@ namespace StreamRepository.Azure
                 {
                     var lastPage = new byte[PageSize];
                     Array.Copy(buffer, start + count - rem, lastPage, 0, rem);
-                    using (var stream = new MemoryStream(lastPage))
-                        _blob.WritePages(stream, (_lastPageIndex + fullPages + plusPage) * PageSize);
+
+                    _blob.WritePagesAsync(lastPage, 0, PageSize, (_lastPageIndex + fullPages + plusPage) * PageSize);
+
+                    //using (var stream = new MemoryStream(lastPage))
+                    //    _blob.WritePages(stream, (_lastPageIndex + fullPages + plusPage) * PageSize);
+
                     // payload.Write(lastPage, 0, PageSize);
                 }
 
                 //payload.Seek(0, SeekOrigin.Begin);
                 //_blob.WritePages(payload, _lastPageIndex * PageSize);
+               // await _blob.WritePagesAsync(payload, _lastPageIndex * PageSize);
             }
 
             int offset;
@@ -100,16 +118,11 @@ namespace StreamRepository.Azure
             var bytes = BitConverter.GetBytes(lastPageIndex * PageSize + offset);
             Array.Copy(bytes, page, 4);
 
-            //using (var stream = new MemoryStream(page))
-            //    _index.WritePages(stream, 0);
+            using (var stream = new MemoryStream(page))
+                _index.WritePages(stream, 0);
 
-            var indexStream = new MemoryStream(page);
-            IAsyncResult ar = null;
-            ar = _index.BeginWritePages(indexStream, 0, null, state =>
-            {
-                _index.EndWritePages(ar);
-                indexStream.Dispose();
-            }, null);
+            //_index.WritePagesAsync(new MemoryStream(page), 0);
+
 
             _lastPageIndex = lastPageIndex;
             _offset = offset;
@@ -118,13 +131,30 @@ namespace StreamRepository.Azure
 
         public IEnumerable<RecordValue> Read_Values()
         {
-            using (var stream = new MemoryStream())
+            using (var stream = new BufferPoolStream(_bufferPool))
             {
                 _blob.DownloadToStream(stream);
                 stream.Seek(0, SeekOrigin.Begin);
 
                 while (stream.Position < Current_Position())
                     yield return FramedValue.Deserialize(stream, stream.Position);
+            }
+        }
+
+        public IEnumerable<byte[]> Read_Raw_Values()
+        {
+            using (var stream = new MemoryStream())
+            {
+                _blob.DownloadToStream(stream);
+                stream.Seek(0, SeekOrigin.Begin);
+
+                while (stream.Position < Current_Position())
+                {
+                    var data = new byte[FramedValue.SizeInBytes()];
+                    stream.Read(data, 0, data.Length);
+                    yield return data;
+
+                }
             }
         }
 
@@ -149,5 +179,6 @@ namespace StreamRepository.Azure
             return _lastPageIndex * PageSize + _offset;
         }
     }
+
 
 }

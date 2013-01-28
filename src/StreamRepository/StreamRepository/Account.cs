@@ -71,14 +71,14 @@ namespace StreamRepository
 
                 if (i % batchSize == 0 && i != 1)
                 {
-                    await repository.Append_Values(batch);
+                    repository.Append_Values(batch);
                     batch.Clear();
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
             }
-            await repository.Append_Values(batch);
+            repository.Append_Values(batch);
 
             watch.Stop();
 

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using StreamRepository;
 using StreamRepository.FileSystem;
+using StreamRepository.Azure;
 
 namespace Stress
 {
@@ -27,15 +28,15 @@ namespace Stress
             //Console.WriteLine("cpu speed : " + watch.Elapsed);
 
             /*---------------     FS -------------*/
-            var filePath = @"d:\Amadori";
-            Account account = new FileSystemAccount(filePath);
+            //var filePath = @"d:\Amadori";
+            //Account account = new FileSystemAccount(filePath);
 
             /*---------------  AZURE  -------------*/
-            //var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
-            //var blobClient = azureAccount.CreateCloudBlobClient();
-            //var container = blobClient.GetContainerReference("onenergy-amadori");
-            //container.CreateIfNotExists();
-            //Account account = new BlobAccount(container);
+            var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
+            var blobClient = azureAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference("onenergy-amadori");
+            container.CreateIfNotExists();
+            Account account = new BlobAccount(container);
 
             //while (true)
             //{
@@ -52,32 +53,33 @@ namespace Stress
             //return;
 
 
-         
 
 
-            //watch = Stopwatch.StartNew();
-            //account.Reset();
-            //account.Write_Streams(5000, 5);
-            //watch.Stop();
-            //Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
-            account.Read_Streams();
+            account.Reset();
+            account.Write_Streams(1, 5);
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 
-            //var streams = account.Get_Streams().ToArray();
-            //var random = new Random();
-            //while(true)
-            //{
-            //    var rep = account.Build_Repository(streams[random.Next(streams.Length)]);
+            //watch = Stopwatch.StartNew();
+            //account.Read_Streams();
+            //watch.Stop();
+            //Console.WriteLine(watch.Elapsed);
 
-            //    watch = Stopwatch.StartNew();
-            //    var test = rep.Get_Values(new DateTime(2012, 1, 1)).Where(v => v.Timestamp > new DateTime(2012, 5, 1)).ToList();
-            //    watch.Stop();
+            var streams = account.Get_Streams().ToArray();
+            var random = new Random();
+            while (true)
+            {
+                var rep = account.Build_Repository(streams[random.Next(streams.Length)]);
 
-            //    Console.WriteLine(watch.Elapsed);
-            //}
+                watch = Stopwatch.StartNew();
+                var test = rep.Get_Raw_Values(new DateTime(2012, 1, 1)).ToList();
+                    //.Where(v => v.Timestamp > new DateTime(2012, 5, 1)).ToList();
+                watch.Stop();
+
+                Console.WriteLine(watch.Elapsed);
+            }
 
             Console.ReadLine();
         }

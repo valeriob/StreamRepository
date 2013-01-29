@@ -9,30 +9,34 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public class FileRepository : Repository
+    public class FileSystemRepository : Repository
     {
-        Dictionary<int, FileInfo> _yearCache;
+        Dictionary<string, FileInfo> _fileCache;
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _folder;
+        ShardingStrategy _sharding;
 
-        public FileRepository(DirectoryInfo folder)
+
+        public FileSystemRepository(DirectoryInfo folder)
         {
             _folder = folder;
             if (!folder.Exists)
                 folder.Create();
-            _yearCache = new Dictionary<int, FileInfo>();
+            _fileCache = new Dictionary<string, FileInfo>();
         }
 
 
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
-            foreach (var year in values.GroupBy(g => g.Item1.Year))
+            foreach (var shard in _sharding.GroupBy(values) )
             {
-                var header = Read_Header(year.Key);
+                var values = shard.GetValues();
+                var name = shard.GetName();
+                var header = Read_Header(name);
 
-                using (var stream = Open_Stream_For_Writing(year.Key))
+                using (var stream = Open_Stream_For_Writing(name))
                 {
                     var tail = header.Index;
 
@@ -41,12 +45,12 @@ namespace StreamRepository.FileSystem
                     {
                        // var writer = new BinaryWriter(buffer, Encoding.Default, true);
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
-                            foreach (var value in year)
+                            foreach (var value in values)
                                 new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
                         stream.Seek(tail, SeekOrigin.Begin);
 
-                        int writtenBytes = year.Count() * FramedValue.SizeInBytes();
+                        int writtenBytes = values.Count() * FramedValue.SizeInBytes();
                         buffer.CopyTo(stream);
                         //stream.Write(buffer.GetBuffer(), 0, writtenBytes);
 
@@ -71,26 +75,21 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        public override void Hint_Year_Samples(int year, int samples)
+        public override void Hint_Sampling_Period(int samplingPeriodInSeconds)
         {
-            using (var file = Get_Year_With_Caching(year).OpenWrite())
-            {
-                var size = FramedValue.SizeInBytes() * samples;
-                file.SetLength(size);
-            }
+            // TODO
+            //using (var file = Get_Year_With_Caching(year).OpenWrite())
+            //{
+            //    var size = FramedValue.SizeInBytes() * samples;
+            //    file.SetLength(size);
+            //}
         }
 
         public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
-            var years = Get_Years();
-            if (from.HasValue)
-                years = years.Where(y => y >= from.Value.Year);
-            if (to.HasValue)
-                years = years.Where(y => y <= to.Value.Year);
-
-            foreach (var year in years)
+            foreach (var shard in _sharding.GetGroups(from, to))
             {
-                using (var file = Open_Stream_For_Reading(year))
+                using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
                     // TODO read obsoleted log, and enrich value.
 
@@ -108,15 +107,9 @@ namespace StreamRepository.FileSystem
 
         public override IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
         {
-            var years = Get_Years();
-            if (from.HasValue)
-                years = years.Where(y => y >= from.Value.Year);
-            if (to.HasValue)
-                years = years.Where(y => y <= to.Value.Year);
-
-            foreach (var year in years)
+            foreach (var shard in _sharding.GetGroups(from, to))
             {
-                using (var file = Open_Stream_For_Reading(year))
+                using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
                     // TODO read obsoleted log, and enrich value.
 
@@ -137,23 +130,11 @@ namespace StreamRepository.FileSystem
             }
         }
 
-
-        IEnumerable<int> Get_Years()
-        {
-            return _folder.GetFiles().Select(f => new
-            {
-                f,
-                f.Name,
-                Year = Convert.ToInt32(Path.GetFileNameWithoutExtension(f.FullName))
-            }).OrderBy(d => d.Year)
-             .Select(s => s.Year);
-        }
-
-        StreamHeader Read_Header(int year)
+        StreamHeader Read_Header(string name)
         {
             try
             {
-                using (var stream = Open_Stream_For_Reading(year))
+                using (var stream = Open_Stream_For_Reading(name))
                 {
                     var reader = new BinaryReader(stream);
 
@@ -166,26 +147,26 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        Stream Open_Stream_For_Reading(int year)
+        Stream Open_Stream_For_Reading(string name)
         {
-            return Get_Year_With_Caching(year).OpenRead();
+            return Get_Year_With_Caching(name).OpenRead();
         }
 
-        Stream Open_Stream_For_Writing(int year)
+        Stream Open_Stream_For_Writing(string name)
         {
             //return new FileStream(Get_Year_With_Caching(year).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
            // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
-           return Get_Year_With_Caching(year).Open(FileMode.Open);
+            return Get_Year_With_Caching(name).Open(FileMode.Open);
         }
 
 
-        FileInfo Get_Year(int year)
+        FileInfo Get_File(string name)
         {
             foreach (var file in _folder.GetFiles())
-                if (file.Name == _logFileName(year))
+                if (file.Name == name)
                     return file;
 
-            var path = Path.Combine(_folder.FullName, _logFileName(year));
+            var path = Path.Combine(_folder.FullName, name);
 
             using (var stream = File.Create(path))
             {
@@ -202,15 +183,14 @@ namespace StreamRepository.FileSystem
             return new FileInfo(path);
         }
 
-        FileInfo Get_Year_With_Caching(int year)
+        FileInfo Get_Year_With_Caching(string name)
         {
             FileInfo file = null;
-            if (!_yearCache.TryGetValue(year, out file))
+            if (!_fileCache.TryGetValue(name, out file))
             {
-                file = Get_Year(year);
-                _yearCache[year] = file;
+                file = Get_File(name);
+                _fileCache[name] = file;
             }
-
             return file;
         }
 

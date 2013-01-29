@@ -54,11 +54,11 @@ namespace Stress
 
 
 
-            //watch = Stopwatch.StartNew();
-            //account.Reset();
-            //account.Write_Streams(1, 5);
-            //watch.Stop();
-            //Console.WriteLine(watch.Elapsed);
+            watch = Stopwatch.StartNew();
+            account.Reset();
+            account.Write_Streams(1, 5);
+            watch.Stop();
+            Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
             account.Read_Streams();

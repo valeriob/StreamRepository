@@ -24,7 +24,7 @@ namespace StreamRepository.FileSystem
         public override Repository Build_Repository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
-            return new FileRepository(directory);
+            return new FileSystemRepository(directory);
         }
 
         public override void Reset()

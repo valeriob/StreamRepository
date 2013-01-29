@@ -75,7 +75,7 @@ namespace StreamRepository
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             var batch = new List<Tuple<DateTime, double, int>>();
 
-            repository.Hint_Year_Samples(since.Year, samples);
+            repository.Hint_Sampling_Period( samples);
             for (int i = 1; i < samples + 1; i++)
             {
                 batch.Add(new Tuple<DateTime, double, int>(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));

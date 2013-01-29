@@ -21,7 +21,7 @@ namespace StreamRepository
 
         public abstract IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null);
 
-        public abstract void Hint_Year_Samples(int year, int samples);
+        public abstract void Hint_Sampling_Period(int samplingPeriodInSeconds);
 
 
         public void Mark_Value_As_Obsolete(RecordValue value)

@@ -85,9 +85,10 @@ namespace StreamRepository.Azure
             }
         }
 
-        public override void Hint_Year_Samples(int year, int samples)
+        public override void Hint_Sampling_Period(int samplingPeriodInSeconds)
         {
-            OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
+            // TODO
+           // OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
         }
 
         PageBlobState OpenBlobFor(int year)

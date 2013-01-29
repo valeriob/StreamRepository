@@ -33,19 +33,6 @@ namespace StreamRepository
             return new FramedValue(DateTime.FromBinary(reader.ReadInt64()), reader.ReadDouble(), reader.ReadInt32());
         }
 
-        //public static RecordValue Deserialize(BinaryReader reader, long position)
-        //{
-        //    byte[] buffer = new byte[20];
-        //    reader.Read(buffer, 0, 20);
-        //    return new RecordValue(buffer);
-
-        //    //var dateTicks = reader.ReadInt64();
-        //    //var date = DateTime.FromBinary(dateTicks);
-        //    //var value = reader.ReadDouble();
-        //    //var importId = reader.ReadInt32();
-        //    //return new RecordValue(date, value, importId, position);
-        //}
-
         public static RecordValue Deserialize(Stream stream, long position)
         {
             byte[] buffer = new byte[20];

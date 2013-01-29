@@ -24,7 +24,8 @@ namespace StreamRepository.FileSystem
         public override Repository Build_Repository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
-            return new FileSystemRepository(directory);
+            var sharding = new FilePerYearShardingStrategy(directory);
+            return new FileSystemRepository(directory, sharding);
         }
 
         public override void Reset()

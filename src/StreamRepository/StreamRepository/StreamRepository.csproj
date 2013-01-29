@@ -69,6 +69,8 @@
     <Compile Include="Azure\Page.cs" />
     <Compile Include="Azure\Position.cs" />
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
+    <Compile Include="FileSystem\FileShardingStrategy.cs" />
+    <Compile Include="FileSystem\FileStream.cs" />
     <Compile Include="FileSystem\FileSystemAccount.cs" />
     <Compile Include="Azure\AzureBlobRepository.cs" />
     <Compile Include="Azure\PageBlobState.cs" />

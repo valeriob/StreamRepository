@@ -18,8 +18,9 @@ namespace StreamRepository.FileSystem
         ShardingStrategy _sharding;
 
 
-        public FileSystemRepository(DirectoryInfo folder)
+        public FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
         {
+            _sharding = sharding;
             _folder = folder;
             if (!folder.Exists)
                 folder.Create();
@@ -30,9 +31,9 @@ namespace StreamRepository.FileSystem
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
-            foreach (var shard in _sharding.GroupBy(values) )
+            foreach (var shard in _sharding.Shard(values) )
             {
-                var values = shard.GetValues();
+                var group = shard.GetValues();
                 var name = shard.GetName();
                 var header = Read_Header(name);
 
@@ -45,12 +46,12 @@ namespace StreamRepository.FileSystem
                     {
                        // var writer = new BinaryWriter(buffer, Encoding.Default, true);
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
-                            foreach (var value in values)
+                            foreach (var value in group)
                                 new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
                         stream.Seek(tail, SeekOrigin.Begin);
 
-                        int writtenBytes = values.Count() * FramedValue.SizeInBytes();
+                        int writtenBytes = group.Count() * FramedValue.SizeInBytes();
                         buffer.CopyTo(stream);
                         //stream.Write(buffer.GetBuffer(), 0, writtenBytes);
 
@@ -87,7 +88,7 @@ namespace StreamRepository.FileSystem
 
         public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetGroups(from, to))
+            foreach (var shard in _sharding.GetShards(from, to))
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
@@ -107,7 +108,7 @@ namespace StreamRepository.FileSystem
 
         public override IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
         {
-            foreach (var shard in _sharding.GetGroups(from, to))
+            foreach (var shard in _sharding.GetShards(from, to))
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
@@ -196,20 +197,4 @@ namespace StreamRepository.FileSystem
 
     }
 
-
-    public class FileStream_With_Hard_Flush : FileStream
-    {
-        public FileStream_With_Hard_Flush(string path, FileMode fileMode)
-            : base(path, fileMode)
-        { }
-
-        public override void Flush()
-        {
-            base.Flush(true);
-            // FlushFileBuffers(base.SafeFileHandle.DangerousGetHandle());
-        }
-
-        [DllImport("kernel32.dll")]
-        static extern bool FlushFileBuffers(IntPtr hFile);
-    }
 }

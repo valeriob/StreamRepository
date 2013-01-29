@@ -76,7 +76,7 @@ namespace Stress
                 var rep = account.Build_Repository(streams[random.Next(streams.Length)]);
 
                 watch = Stopwatch.StartNew();
-                var test = rep.Get_Raw_Values(new DateTime(2012, 1, 1)).ToList();
+                var test = rep.Get_Values(new DateTime(2012, 1, 1)).ToList();
                     //.Where(v => v.Timestamp > new DateTime(2012, 5, 1)).ToList();
                 watch.Stop();
 

@@ -66,6 +66,8 @@
   <ItemGroup>
     <Compile Include="Account.cs" />
     <Compile Include="Azure\BlobAccount.cs" />
+    <Compile Include="Azure\Page.cs" />
+    <Compile Include="Azure\Position.cs" />
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
     <Compile Include="FileSystem\FileAccount.cs" />
     <Compile Include="Azure\AzureBlobRepository.cs" />

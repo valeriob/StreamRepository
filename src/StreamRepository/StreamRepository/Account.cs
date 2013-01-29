@@ -23,7 +23,7 @@ namespace StreamRepository
             {
                 streams++;
                 var repository = Build_Repository(stream);
-                foreach (var value in repository.Get_Values())
+                foreach (var value in repository.Get_Raw_Values())
                     values++;
 
                 var speed = values / watch.Elapsed.TotalSeconds;

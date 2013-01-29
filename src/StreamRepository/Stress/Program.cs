@@ -28,15 +28,15 @@ namespace Stress
             //Console.WriteLine("cpu speed : " + watch.Elapsed);
 
             /*---------------     FS -------------*/
-            var filePath = @"g:\temp\Amadori";
-            Account account = new FileSystemAccount(filePath);
+            //var filePath = @"d:\temp\Amadori";
+            //Account account = new FileSystemAccount(filePath);
 
             /*---------------  AZURE  -------------*/
-            //var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
-            //var blobClient = azureAccount.CreateCloudBlobClient();
-            //var container = blobClient.GetContainerReference("onenergy-amadori");
-            //container.CreateIfNotExists();
-            //Account account = new BlobAccount(container);
+            var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
+            var blobClient = azureAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference("onenergy-amadori");
+            container.CreateIfNotExists();
+            Account account = new BlobAccount(container);
 
             //while (true)
             //{
@@ -54,18 +54,20 @@ namespace Stress
 
 
 
-
+            //watch = Stopwatch.StartNew();
+            //account.Reset();
+            //account.Write_Streams(1, 5);
+            //watch.Stop();
+            //Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
-            account.Reset();
-            account.Write_Streams(5000, 5);
+            account.Read_Streams();
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 
-            //watch = Stopwatch.StartNew();
-            //account.Read_Streams();
-            //watch.Stop();
-            //Console.WriteLine(watch.Elapsed);
+            Console.WriteLine("hit enter to loop reading");
+            Console.ReadLine();
+
 
             var streams = account.Get_Streams().ToArray();
             var random = new Random();

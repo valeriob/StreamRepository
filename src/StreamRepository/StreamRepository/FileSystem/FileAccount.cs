@@ -11,11 +11,9 @@ namespace StreamRepository.FileSystem
     public class FileSystemAccount : Account
     {
         DirectoryInfo _directory;
-        BufferPool _bufferPool;
 
         public FileSystemAccount(string directoryPath)
         {
-            _bufferPool = new BufferPool();
             _directory = new DirectoryInfo(directoryPath);
             if (!_directory.Exists)
                 _directory.Create();
@@ -26,7 +24,7 @@ namespace StreamRepository.FileSystem
         public override Repository Build_Repository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
-            return new FileRepository(directory, _bufferPool);
+            return new FileRepository(directory);
         }
 
         public override void Reset()

@@ -14,13 +14,11 @@ namespace StreamRepository.Azure
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
         Dictionary<int, PageBlobState> _cache;
-        BufferPool _bufferPool;
 
         public AzureBlobRepository(CloudBlobDirectory directory, BufferPool bufferPool)
         {
             _directory = directory;
             _cache = new Dictionary<int, PageBlobState>();
-            _bufferPool = bufferPool;
         }
 
 
@@ -38,7 +36,7 @@ namespace StreamRepository.Azure
 
                     var blob = OpenBlobFor(year.Key);
 
-                    blob.AppendAsync(stream.GetBuffer(), 0, writtenBytes);
+                    blob.Append(stream.GetBuffer(), 0, writtenBytes);
                 }
             }
         }
@@ -97,8 +95,8 @@ namespace StreamRepository.Azure
             PageBlobState blob;
             if (!_cache.TryGetValue(year, out blob))
             {
-                blob = new PageBlobState(_directory, _logFileName(year), _bufferPool);
-                //blob.Open();
+                blob = new PageBlobState(_directory, _logFileName(year));
+                blob.Open();
                 _cache[year] = blob;
             }
             return blob;

@@ -9,13 +9,17 @@ namespace StreamRepository
 {
     public abstract class Account
     {
+        static readonly int OgniQuartoDiOra = 15 * 60;
+        static readonly int OgniMinuto = 60;
+
+
         public void Read_Streams()
         {
             long values = 0;
             int streams = 0;
             var watch = Stopwatch.StartNew();
 
-            foreach (var stream in Get_Streams().Take(2))
+            foreach (var stream in Get_Streams())
             {
                 streams++;
                 var repository = Build_Repository(stream);
@@ -36,38 +40,45 @@ namespace StreamRepository
             {
                 MaxDegreeOfParallelism = 3
             };
-
-            Parallel.For(0, streams, options, i =>
+            try
             {
-                Write_Stream(Guid.NewGuid() + "", years).Wait();
-                Console.WriteLine("Working on {0}° stream", i);
-            });
+                Write_Stream(Guid.NewGuid() + "", years);
+            }
+            catch (AggregateException ex)
+            {
+                foreach (var exception in ex.InnerExceptions)
+                    Console.WriteLine(exception.Message);
+                throw;
+            }
+            //Parallel.For(0, streams, options, i =>
+            //{
+            //    Write_Stream(Guid.NewGuid() + "", years).Wait();
+            //    Console.WriteLine("Working on {0}° stream", i);
+            //});
         }
 
-        public async Task Write_Stream(string name, int years)
+        public void Write_Stream(string name, int years)
         {
             var repository = Build_Repository(name);
 
             for (int year = DateTime.Now.Year - years; year < DateTime.Now.Year; year++)
-                await Write_Year(year, repository);
+                Write_Year(repository, year, OgniQuartoDiOra);
         }
 
-        public async Task Write_Year(int year, Repository repository)
+        public void Write_Year(Repository repository, int year, int samplingPeriodInSeconds)
         {
             var random = new Random();
             var since = new DateTime(year, 1, 1);
             var watch = Stopwatch.StartNew();
             int batchSize = 10000;
 
-            //int samples = 365 * 24 * 60; // 525600, minutes 
-            int samples = 365 * 24 * 4; // 525600, quaters of an hour 
+            int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             var batch = new List<Tuple<DateTime, double, int>>();
 
             repository.Hint_Year_Samples(since.Year, samples);
             for (int i = 1; i < samples + 1; i++)
             {
-                //repository.Append_Value(since.AddMinutes(i), random.NextDouble(), (i / 100) + 1);
-                batch.Add(new Tuple<DateTime, double, int>(since.AddMinutes(i * 15 /* *15*/), random.NextDouble(), (i / batchSize) + 1));
+                batch.Add(new Tuple<DateTime, double, int>(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
 
                 if (i % batchSize == 0 && i != 1)
                 {

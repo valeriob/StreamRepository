@@ -15,11 +15,9 @@ namespace StreamRepository.FileSystem
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _folder;
-        BufferPool _bufferPool;
 
-        public FileRepository(DirectoryInfo folder, BufferPool bufferPool)
+        public FileRepository(DirectoryInfo folder)
         {
-            _bufferPool = bufferPool;
             _folder = folder;
             if (!folder.Exists)
                 folder.Create();
@@ -37,9 +35,9 @@ namespace StreamRepository.FileSystem
                 using (var stream = Open_Stream_For_Writing(year.Key))
                 {
                     var tail = header.Index;
-                   
-                    //using (var buffer = new BufferPoolStream(_bufferPool))
-                    using (var buffer = new MemoryStream())
+
+                    using (var buffer = new BufferPoolStream(new BufferPool()))
+                    //using (var buffer = new MemoryStream())
                     {
                        // var writer = new BinaryWriter(buffer, Encoding.Default, true);
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))

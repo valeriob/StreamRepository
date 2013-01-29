@@ -17,11 +17,10 @@ namespace StreamRepository.Azure
 
         CloudPageBlob _blob;
         CloudPageBlob _index;
-        //int _lastPageIndex;
-        //int _offset;
         Position _commitPosition = Position.Start;
-        byte[] _lastPage = new byte[PageSize];
 
+        byte[] _lastPage = new byte[PageSize];
+        Page _lastPage2;
 
         public PageBlobState(CloudBlobDirectory directory, string name)
         {
@@ -41,14 +40,14 @@ namespace StreamRepository.Azure
                 _blob.FetchAttributes();
 
             _commitPosition = Get_Committed_Position();
-            //int length = Get_Committed_Length();
-            //_lastPageIndex = Math.DivRem(length, PageSize, out _offset);
 
             using (var stream = _blob.OpenRead())
             {
                 stream.Seek(_commitPosition.Page * PageSize, SeekOrigin.Begin);
                 stream.Read(_lastPage, 0, 512);
             }
+
+            _lastPage2 = new Page(_commitPosition, _lastPage);
         }
 
 
@@ -56,25 +55,25 @@ namespace StreamRepository.Azure
         {
             Ensure_There_Is_Space_For(count, true);
 
-            int _offset = _commitPosition.Offset;
-            int _lastPageIndex = _commitPosition.Page;
+            int offset = _commitPosition.Offset;
+            int page = _commitPosition.Page;
 
-            int free = Math.Abs(PageSize - _offset);
+            int free = Math.Abs(PageSize - offset);
             int copied = start;
             int plusPage = 0;
 
             using (var payload = new MemoryStream())
             {
-                if (_offset == 0 && count < PageSize || (free > 0 && free < PageSize))
+                if (offset == 0 && count < PageSize || (free > 0 && free < PageSize))
                 {
                     int toCopy = Math.Min(free, count);
 
-                    Array.Copy(buffer, start, _lastPage, _offset, toCopy);
+                    Array.Copy(buffer, start, _lastPage, offset, toCopy);
 
                     //_blob.WritePagesAsync(_lastPage, 0, PageSize, _lastPageIndex * PageSize);
 
                     using (var stream = new MemoryStream(_lastPage, 0, PageSize))
-                        _blob.WritePages(stream, _lastPageIndex * PageSize);
+                        _blob.WritePages(stream, page * PageSize);
 
                     //payload.Write(_lastPage, 0, PageSize);
 
@@ -91,7 +90,7 @@ namespace StreamRepository.Azure
                     //_blob.WritePagesAsync(buffer, start + copied, count - copied - rem, (_lastPageIndex + plusPage) * PageSize);
 
                     using (var stream = new MemoryStream(buffer, start + copied, count - copied - rem))
-                        _blob.WritePages(stream, (_lastPageIndex + plusPage) * PageSize);
+                        _blob.WritePages(stream, (page + plusPage) * PageSize);
 
                     //payload.Write(buffer, start + copied, count - copied - rem);
                 }
@@ -105,7 +104,7 @@ namespace StreamRepository.Azure
                     //_blob.WritePagesAsync(lastPage, 0, PageSize, (_lastPageIndex + fullPages + plusPage) * PageSize);
 
                     using (var stream = new MemoryStream(lastPage))
-                        _blob.WritePages(stream, (_lastPageIndex + fullPages + plusPage) * PageSize);
+                        _blob.WritePages(stream, (page + fullPages + plusPage) * PageSize);
 
                     // payload.Write(lastPage, 0, PageSize);
                 }
@@ -115,11 +114,7 @@ namespace StreamRepository.Azure
                // await _blob.WritePagesAsync(payload, _lastPageIndex * PageSize);
             }
 
-            int offset;
-            int lastPageIndex = Math.DivRem(_lastPageIndex * PageSize + _offset + count, PageSize, out offset);
-
-
-            Commit_Position(lastPageIndex * PageSize + offset);
+            Commit_Position(page * PageSize + offset + count);
 
             //var page = new byte[PageSize];
             //var bytes = BitConverter.GetBytes(lastPageIndex * PageSize + offset);
@@ -178,11 +173,6 @@ namespace StreamRepository.Azure
         }
 
 
-        //public int Current_Position()
-        //{
-        //    return _lastPageIndex * PageSize + _offset;
-        //}
-
         int Get_Committed_Length()
         {
             int length = 0;
@@ -196,11 +186,7 @@ namespace StreamRepository.Azure
         Position Get_Committed_Position()
         {
             var length = Get_Committed_Length();
-
-            int offset;
-            int page = Math.DivRem(length, PageSize, out offset);
-
-            return new Position(page, offset);
+            return new Position(length);
         }
 
         void Commit_Position(int length)
@@ -208,10 +194,7 @@ namespace StreamRepository.Azure
             _blob.Metadata[Metadata_Size] = length +"";
             _blob.SetMetadata();
 
-            int offset;
-            int page = Math.DivRem(length, PageSize, out offset);
-            _commitPosition = new Position(page, offset);
-           //_lastPageIndex = Math.DivRem(length, PageSize, out _offset);
+            _commitPosition = new Position(length);
         }
 
        
@@ -220,8 +203,7 @@ namespace StreamRepository.Azure
 
     public struct Position
     {
-        public readonly static Position Start = new Position(0,0);
-
+        public readonly static Position Start = new Position(0);
 
         private int _page;
         public int Page
@@ -233,12 +215,17 @@ namespace StreamRepository.Azure
         {
             get { return _offset; }
         }
-        
-  
+
+
         public Position(int page, int offset)
         {
             _page = page;
             _offset = offset;
+        }
+
+        public Position(int length)
+        {
+            _page = Math.DivRem(length, PageBlobState.PageSize, out _offset);
         }
 
 
@@ -248,4 +235,29 @@ namespace StreamRepository.Azure
         }
     }
 
+
+    public class Page
+    {
+        public Position Position { get; private set; }
+        public byte[] _data { get; set; }
+
+        public Page(Position position, byte[] data)
+        {
+            Position = position;
+            _data = data;
+        }
+
+        public Page(int page, int offset, byte[] data) : this(new Position(page, offset), data) 
+        {
+        }
+
+        public Page(int position, byte[] data) : this(new Position(position), data) 
+        { 
+        }
+
+        public int Free_Space()
+        {
+            return PageBlobState.PageSize - Position.Offset;
+        }
+    }
 }

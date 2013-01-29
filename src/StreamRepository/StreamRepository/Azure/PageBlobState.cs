@@ -57,11 +57,9 @@ namespace StreamRepository.Azure
         {
             Ensure_There_Is_Space_For(count, true);
 
-            int page = _commitPosition.Page;
-
             int copied = start;
-            int plusPage = 0;
-
+            int initialPageUsed = 0;
+            int page = _commitPosition.Page;
             Page lastPage = _lastPage.Clone();
 
             if (lastPage.Is_empty_and_can_contain_all_data___or___Is_not_empty(count))
@@ -71,7 +69,7 @@ namespace StreamRepository.Azure
                 using (var stream = lastPage.ToStream())
                     _blob.WritePages(stream, _commitPosition.ToPageAddress());
 
-                plusPage = 1;
+                initialPageUsed = 1;
             }
 
 
@@ -81,17 +79,15 @@ namespace StreamRepository.Azure
             if (fullPages > 0)
             {
                 using (var stream = new MemoryStream(buffer, start + copied, count - copied - rem))
-                    _blob.WritePages(stream, (page + plusPage) * PageSize);
-
-                lastPage = new Page((page + plusPage + fullPages) * PageSize);
+                    _blob.WritePages(stream, (page + initialPageUsed) * PageSize);
             }
+
+            int currentPosition = (page + fullPages + initialPageUsed) * PageSize;
+            lastPage = new Page(currentPosition);
 
 
             if (rem > 0)
             {
-                int currentPosition = (page + fullPages + plusPage) * PageSize;
-
-                lastPage = new Page(currentPosition);
                 lastPage.Fill(buffer, start + count - rem, rem);
                 lastPage.WriteToBlob(_blob);
             }

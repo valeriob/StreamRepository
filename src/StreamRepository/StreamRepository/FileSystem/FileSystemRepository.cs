@@ -28,9 +28,9 @@ namespace StreamRepository.FileSystem
 
         public static FileSystemRepository OperOrCreate(DirectoryInfo directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
         {
-            string index = FileUtilities.Get_Index_File(directory);
+            string index = NamingUtilities.Get_Index_File(directory);
 
-            if (!directory.Exists)
+            if (StreamExists(directory))
             {
                 directory.Create();
                 File.AppendAllText(index, sharding.GetId() + "");
@@ -42,6 +42,11 @@ namespace StreamRepository.FileSystem
                 sharding = factory.Create(id);
             }
             return new FileSystemRepository(directory, sharding);
+        }
+
+        static bool StreamExists(DirectoryInfo directory)
+        {
+            return !directory.Exists;
         }
 
 
@@ -198,7 +203,7 @@ namespace StreamRepository.FileSystem
                     header.Serialize(writer);
             }
 
-            File.AppendAllLines(FileUtilities.Get_Index_File(_directory), new[] { name });
+            File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
 
             return new FileInfo(path);
         }
@@ -216,11 +221,5 @@ namespace StreamRepository.FileSystem
 
     }
 
-    public static class FileUtilities
-    {
-        public static string Get_Index_File(DirectoryInfo directory)
-        {
-            return Path.Combine(directory.FullName, "index.dat");
-        }
-    }
+
 }

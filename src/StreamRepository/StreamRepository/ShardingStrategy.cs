@@ -38,7 +38,7 @@ namespace StreamRepository
     public class ShardingStrategyFactoryImpl : ShardingStrategyFactory
     {
         [ImportMany(typeof(ShardingStrategy))]
-        static List<ShardingStrategy> _strategies;
+        List<ShardingStrategy> _strategies;
 
         static CompositionContainer _container;
 

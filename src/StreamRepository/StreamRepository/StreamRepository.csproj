@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Account.cs" />
     <Compile Include="Azure\BlobAccount.cs" />
+    <Compile Include="Azure\BlobShardingStrategy.cs" />
     <Compile Include="Azure\Page.cs" />
     <Compile Include="Azure\Position.cs" />
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="Azure\PageBlobState.cs" />
     <Compile Include="FileSystem\FileSystemRepository.cs" />
     <Compile Include="FramedValue.cs" />
+    <Compile Include="Naming.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordValue.cs" />
     <Compile Include="Repository.cs" />

@@ -12,18 +12,18 @@ namespace StreamRepository.Azure
     public class BlobAccount : Account
     {
         CloudBlobContainer _container;
-        BufferPool _bufferPool;
 
         public BlobAccount(CloudBlobContainer container)
         {
             _container = container;
-            _bufferPool = new BufferPool();
         }
 
         public override Repository Build_Repository(string streamName)
         {
-            var sub = _container.GetDirectoryReference(streamName);
-            return new AzureBlobRepository(sub, _bufferPool);
+            var directory = _container.GetDirectoryReference(streamName);
+            var sharding = new BlobPerYearShardingStrategy(directory);
+
+            return AzureBlobRepository.OperOrCreate(directory, ShardingStrategyFactoryImpl.Instance(), sharding);
         }
         public override IEnumerable<string> Get_Streams()
         {

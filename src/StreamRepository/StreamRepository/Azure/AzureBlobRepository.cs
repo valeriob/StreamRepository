@@ -24,42 +24,51 @@ namespace StreamRepository.Azure
             _cache = new Dictionary<string, PageBlobState>();
         }
 
-        public static AzureBlobRepository Create(CloudBlobDirectory directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
+        public static AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
         {
-            
+            var indexBlob = directory.GetPageBlobReference(NamingUtilities.Get_Index_File(directory));
 
-            if (!directory.ListBlobs().Any())
-            { 
-                
+            if (StreamExists(directory))
+            {
+                using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(sharding.GetId() + "");
+                   // stream.Write(sharding.GetId().ToByteArray(), 0, 16);
+                }
             }
-            //if (!directory.ListBlobs)
-            //{
-            //    directory.Create();
-            //    File.AppendAllText(index, sharding.GetId() + "");
-            //}
-            //else
-            //{
-            //    var lines = File.ReadAllLines(index);
-            //    var id = Guid.Parse(lines.First());
-            //    sharding = factory.Create(id);
-            //}
+            else 
+            {
+                using (var stream = indexBlob.OpenRead())
+                using (var reader = new StreamReader(stream))
+                {
+                    var lines = reader.ReadToEnd().Split(new [] { Environment.NewLine },StringSplitOptions.None);
+                    var id = Guid.Parse(lines.First());
+                    sharding = factory.Create(id);
+                }
+            }
 
             return new AzureBlobRepository(directory, sharding);
+        }
+        static bool StreamExists(CloudBlobDirectory directory)
+        {
+            return !directory.ListBlobs().Any();
         }
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
-            foreach (var year in values.GroupBy(g => g.Item1.Year))
+            foreach (var shard in _sharding.Shard(values))
             {
+                var group = shard.GetValues();
                 using (var stream = new MemoryStream())
                 {
                     using (var writer = new BinaryWriter(stream))
-                        foreach (var value in year)
+                        foreach (var value in group)
                             new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
-                        
-                    int writtenBytes = year.Count() * FramedValue.SizeInBytes();
 
-                    var blob = OpenBlobFor(year.Key);
+                    int writtenBytes = group.Count() * FramedValue.SizeInBytes();
+
+                    var blob = OpenBlobFor(shard.GetName());
 
                     blob.Append(stream.GetBuffer(), 0, writtenBytes);
                 }
@@ -69,15 +78,9 @@ namespace StreamRepository.Azure
 
         public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
-            var years = Get_Years();
-            if (from.HasValue)
-                years = years.Where(y => y >= from.Value.Year);
-            if (to.HasValue)
-                years = years.Where(y => y <= to.Value.Year);
-
-            foreach (var year in years)
+            foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobFor(year);
+                var blob = OpenBlobFor(shard.GetName());
                 foreach (var value in blob.Read_Values())
                     yield return value;
             }
@@ -85,15 +88,9 @@ namespace StreamRepository.Azure
 
         public override  IEnumerable<byte[]> Get_Raw_Values(DateTime? from, DateTime? to)
         {
-            var years = Get_Years();
-            if (from.HasValue)
-                years = years.Where(y => y >= from.Value.Year);
-            if (to.HasValue)
-                years = years.Where(y => y <= to.Value.Year);
-
-            foreach (var year in years)
+            foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobFor(year);
+                var blob = OpenBlobFor(shard.GetName());
                 foreach (var value in blob.Read_Raw_Values())
                     yield return value;
             }

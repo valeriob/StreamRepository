@@ -14,7 +14,7 @@ namespace StreamRepository.Azure
     {
         public static readonly string Metadata_Size = "Size";
         public static readonly Int16 PageSize = 512;
-
+        CloudBlobDirectory _directory;
         CloudPageBlob _blob;
         CloudPageBlob _index;
 
@@ -24,6 +24,7 @@ namespace StreamRepository.Azure
 
         public PageBlobState(CloudBlobDirectory directory, string name)
         {
+            _directory = directory;
             _blob = directory.GetPageBlobReference(name);
             _index = directory.GetPageBlobReference(name + "-index");
         }
@@ -35,6 +36,16 @@ namespace StreamRepository.Azure
             {
                 _blob.Create(PageSize * 128);
                 _blob.Metadata[Metadata_Size] = "0";
+
+                var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
+
+                using (var stream = indexBlob.OpenWrite(null))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(_blob.Uri.Segments.Last());
+                }
+
+               // File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
             }
             else
                 _blob.FetchAttributes();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -7,15 +8,15 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StreamRepository.FileSystem
+namespace StreamRepository.Azure
 {
     [Export(typeof(ShardingStrategy))]
-    [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
-    public class FilePerYearShardingStrategy : ShardingStrategy
+    [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
+    public class BlobPerYearShardingStrategy : ShardingStrategy
     {
-        DirectoryInfo _directory;
+        CloudBlobDirectory _directory;
 
-        public FilePerYearShardingStrategy(DirectoryInfo directory)
+        public BlobPerYearShardingStrategy(CloudBlobDirectory directory)
         {
             _directory = directory;
         }
@@ -73,12 +74,12 @@ namespace StreamRepository.FileSystem
     }
 
     [Export(typeof(ShardingStrategy))]
-    [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
-    public class FilePerMonthShardingStrategy : ShardingStrategy
+    [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
+    public class BlobPerMonthShardingStrategy : ShardingStrategy
     {
-        DirectoryInfo _directory;
+        CloudBlobDirectory _directory;
 
-        public FilePerMonthShardingStrategy(DirectoryInfo directory)
+        public BlobPerMonthShardingStrategy(CloudBlobDirectory directory)
         {
             _directory = directory;
         }

@@ -39,13 +39,13 @@ namespace StreamRepository.Azure
 
                 var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
 
-                using (var stream = indexBlob.OpenWrite(null))
-                using (var writer = new StreamWriter(stream))
+                using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
                 {
-                    writer.WriteLine(_blob.Uri.Segments.Last());
+                    byte[] buffer = new byte[PageBlobState.PageSize];
+                    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last());
+                    Array.Copy(bytes, buffer, bytes.Length);
+                    stream.Write(buffer, 0, buffer.Length);
                 }
-
-               // File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
             }
             else
                 _blob.FetchAttributes();
@@ -139,6 +139,7 @@ namespace StreamRepository.Azure
 
         public void Ensure_There_Is_Space_For(int lenght, bool relative = false)
         {
+            lenght = Math.Max(lenght, 1024 * 1024);
             int rem;
             int pages = Math.DivRem(lenght, PageSize, out rem);
             if (rem > 0)
@@ -150,7 +151,16 @@ namespace StreamRepository.Azure
 
             if (_blob.Properties.Length < neededSize)
             {
-                _blob.Resize(neededSize);
+                try
+                {
+                   // neededSize = Math.Min(1024 * 1024, neededSize);
+                    _blob.Resize(neededSize);
+                }
+                catch (StorageException)
+                {
+                    _blob.FetchAttributes();
+                    _blob.Resize(neededSize);
+                }
             }
         }
 

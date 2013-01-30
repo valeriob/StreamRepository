@@ -68,10 +68,12 @@
     <Compile Include="Account.cs" />
     <Compile Include="Azure\BlobAccount.cs" />
     <Compile Include="Azure\BlobShardingStrategy.cs" />
+    <Compile Include="Azure\BlobFactory.cs" />
     <Compile Include="Azure\Page.cs" />
     <Compile Include="Azure\Position.cs" />
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
     <Compile Include="Extensions\System.cs" />
+    <Compile Include="FileSystem\FileSystemFactory.cs" />
     <Compile Include="FileSystem\FileShardingStrategy.cs" />
     <Compile Include="FileSystem\FileStream.cs" />
     <Compile Include="FileSystem\FileSystemAccount.cs" />

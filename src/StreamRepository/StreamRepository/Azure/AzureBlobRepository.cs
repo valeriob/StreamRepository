@@ -16,45 +16,15 @@ namespace StreamRepository.Azure
         Dictionary<string, PageBlobState> _cache;
         ShardingStrategy _sharding;
 
-        AzureBlobRepository(CloudBlobDirectory directory, ShardingStrategy sharding)
+
+        public AzureBlobRepository(CloudBlobDirectory directory, ShardingStrategy sharding)
         {
             _directory = directory;
             _sharding = sharding;
-
             _cache = new Dictionary<string, PageBlobState>();
         }
 
-        public static AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
-        {
-            var indexBlob = directory.GetPageBlobReference(NamingUtilities.Get_Index_File(directory));
-
-            if (StreamExists(directory))
-            {
-                using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.WriteLine(sharding.GetId() + "");
-                   // stream.Write(sharding.GetId().ToByteArray(), 0, 16);
-                }
-            }
-            else 
-            {
-                using (var stream = indexBlob.OpenRead())
-                using (var reader = new StreamReader(stream))
-                {
-                    var lines = reader.ReadToEnd().Split(new [] { Environment.NewLine },StringSplitOptions.None);
-                    var id = Guid.Parse(lines.First());
-                    sharding = factory.Create(id);
-                }
-            }
-
-            return new AzureBlobRepository(directory, sharding);
-        }
-        static bool StreamExists(CloudBlobDirectory directory)
-        {
-            return !directory.ListBlobs().Any();
-        }
-
+ 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values))
@@ -74,7 +44,6 @@ namespace StreamRepository.Azure
                 }
             }
         }
-
 
         public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {

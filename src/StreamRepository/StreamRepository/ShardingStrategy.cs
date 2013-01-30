@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface ShardingStrategyFactory
-    {
-        ShardingStrategy Create(Guid strategyId);
-    }
+    //public interface ShardingStrategyFactory
+    //{
+    //    ShardingStrategy Create(Guid strategyId);
+    //}
 
     public interface ShardingStrategy
     {
-        Guid GetId();
+        //Guid GetId();
 
         IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
 
@@ -35,56 +35,52 @@ namespace StreamRepository
     }
 
 
-    public class ShardingStrategyFactoryImpl : ShardingStrategyFactory
-    {
-        [ImportMany(typeof(ShardingStrategy))]
-        List<ShardingStrategy> _strategies;
+    //public class ShardingStrategyFactoryImpl : ShardingStrategyFactory
+    //{
+    //    [ImportMany(typeof(ShardingStrategy))]
+    //    List<ShardingStrategy> _strategies;
 
-        static CompositionContainer _container;
+    //    static CompositionContainer _container;
 
-        static ShardingStrategyFactoryImpl()
-        {
-            var _catalog = new AggregateCatalog();
-            _catalog.Catalogs.Add(new AssemblyCatalog(typeof(ShardingStrategyFactoryImpl).Assembly));
+    //    static ShardingStrategyFactoryImpl()
+    //    {
+    //        var _catalog = new AggregateCatalog();
+    //        _catalog.Catalogs.Add(new AssemblyCatalog(typeof(ShardingStrategyFactoryImpl).Assembly));
 
-            _container = new CompositionContainer(_catalog, CompositionOptions.DisableSilentRejection | CompositionOptions.IsThreadSafe);
-        }
+    //        _container = new CompositionContainer(_catalog, CompositionOptions.DisableSilentRejection | CompositionOptions.IsThreadSafe);
+    //    }
 
-        static ShardingStrategyFactory _instance;
-        public static ShardingStrategyFactory Instance()
-        {
-            if (_instance == null)
-                _instance = new ShardingStrategyFactoryImpl();
+    //    static ShardingStrategyFactory _instance;
+    //    public static ShardingStrategyFactory Instance()
+    //    {
+    //        if (_instance == null)
+    //            _instance = new ShardingStrategyFactoryImpl();
 
-            return _instance;
-        }
+    //        return _instance;
+    //    }
 
 
-        Dictionary<string, ShardingStrategy> _dictionary;
-        ShardingStrategyFactoryImpl()
-        {
-            _container.SatisfyImportsOnce(this);
-            _dictionary = _strategies.ToDictionary(s => s.GetType().GetAttribute<GuidAttribute>().Value);
-        }
+    //    Dictionary<string, ShardingStrategy> _dictionary;
+    //    ShardingStrategyFactoryImpl()
+    //    {
+    //        _container.SatisfyImportsOnce(this);
+    //        _dictionary = _strategies.ToDictionary(s => s.GetType().GetAttribute<GuidAttribute>().Value);
+    //    }
 
-        public ShardingStrategy Create(Guid strategyId)
-        {
-            ShardingStrategy strategy;
-            if (!_dictionary.TryGetValue(strategyId + "", out strategy))
-                throw new Exception("strategy could not be found : " + strategyId);
+    //    public ShardingStrategy Create(Guid strategyId)
+    //    {
+    //        ShardingStrategy strategy;
+    //        if (!_dictionary.TryGetValue(strategyId + "", out strategy))
+    //            throw new Exception("strategy could not be found : " + strategyId);
 
-            return strategy;
-        }
-
-        
-
-    }
+    //        return strategy;
+    //    }
+    //}
 
     [Export(typeof(ShardingStrategy))]
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]
     public class NoShardingStrategy : ShardingStrategy
     {
-
         public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             yield return new NoGroup(values);

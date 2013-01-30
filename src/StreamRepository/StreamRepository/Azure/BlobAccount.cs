@@ -12,18 +12,20 @@ namespace StreamRepository.Azure
     public class BlobAccount : Account
     {
         CloudBlobContainer _container;
+        BlobFactory _factory;
 
-        public BlobAccount(CloudBlobContainer container)
+        public BlobAccount(CloudBlobContainer container, BlobFactory factory)
         {
             _container = container;
+            _factory = factory;
         }
 
         public override Repository Build_Repository(string streamName)
         {
             var directory = _container.GetDirectoryReference(streamName);
-            var sharding = new BlobPerYearShardingStrategy(directory);
+            var defaultSharding = new BlobPerYearShardingStrategy(directory);
 
-            return AzureBlobRepository.OperOrCreate(directory, ShardingStrategyFactoryImpl.Instance(), sharding);
+            return _factory.OperOrCreate(directory, defaultSharding);
         }
         public override IEnumerable<string> Get_Streams()
         {

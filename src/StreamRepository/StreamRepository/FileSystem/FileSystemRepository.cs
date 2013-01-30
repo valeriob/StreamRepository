@@ -18,7 +18,7 @@ namespace StreamRepository.FileSystem
         ShardingStrategy _sharding;
 
 
-        FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
+        public FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
         {
             _sharding = sharding;
             _directory = folder;
@@ -26,28 +26,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public static FileSystemRepository OperOrCreate(DirectoryInfo directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
-        {
-            string index = NamingUtilities.Get_Index_File(directory);
-
-            if (StreamExists(directory))
-            {
-                directory.Create();
-                File.AppendAllText(index, sharding.GetId() + "");
-            }
-            else
-            {
-                var lines = File.ReadAllLines(index);
-                var id = Guid.Parse(lines.First());
-                sharding = factory.Create(id);
-            }
-            return new FileSystemRepository(directory, sharding);
-        }
-
-        static bool StreamExists(DirectoryInfo directory)
-        {
-            return !directory.Exists;
-        }
+  
 
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)

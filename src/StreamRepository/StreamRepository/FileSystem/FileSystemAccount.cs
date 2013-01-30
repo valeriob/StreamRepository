@@ -11,9 +11,11 @@ namespace StreamRepository.FileSystem
     public class FileSystemAccount : Account
     {
         DirectoryInfo _directory;
+        FileSystemFactory _factory;
 
-        public FileSystemAccount(string directoryPath)
+        public FileSystemAccount(string directoryPath, FileSystemFactory factory)
         {
+            _factory = factory;
             _directory = new DirectoryInfo(directoryPath);
             if (!_directory.Exists)
                 _directory.Create();
@@ -23,9 +25,9 @@ namespace StreamRepository.FileSystem
         public override Repository Build_Repository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
-            var sharding = new FilePerYearShardingStrategy(directory);
+            var defaultSharding = new FilePerYearShardingStrategy(directory);
 
-            return FileSystemRepository.OperOrCreate(directory, ShardingStrategyFactoryImpl.Instance(), sharding);
+            return _factory.OperOrCreate(directory, defaultSharding);
         }
 
         public override void Reset()

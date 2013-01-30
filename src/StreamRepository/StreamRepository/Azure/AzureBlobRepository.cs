@@ -13,14 +13,39 @@ namespace StreamRepository.Azure
     {
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
-        Dictionary<int, PageBlobState> _cache;
+        Dictionary<string, PageBlobState> _cache;
+        ShardingStrategy _sharding;
 
-        public AzureBlobRepository(CloudBlobDirectory directory, BufferPool bufferPool)
+        AzureBlobRepository(CloudBlobDirectory directory, ShardingStrategy sharding)
         {
             _directory = directory;
-            _cache = new Dictionary<int, PageBlobState>();
+            _sharding = sharding;
+
+            _cache = new Dictionary<string, PageBlobState>();
         }
 
+        public static AzureBlobRepository Create(CloudBlobDirectory directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
+        {
+            
+
+            if (!directory.ListBlobs().Any())
+            { 
+                
+            }
+            //if (!directory.ListBlobs)
+            //{
+            //    directory.Create();
+            //    File.AppendAllText(index, sharding.GetId() + "");
+            //}
+            //else
+            //{
+            //    var lines = File.ReadAllLines(index);
+            //    var id = Guid.Parse(lines.First());
+            //    sharding = factory.Create(id);
+            //}
+
+            return new AzureBlobRepository(directory, sharding);
+        }
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
@@ -91,14 +116,14 @@ namespace StreamRepository.Azure
            // OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
         }
 
-        PageBlobState OpenBlobFor(int year)
+        PageBlobState OpenBlobFor(string name)
         {
             PageBlobState blob;
-            if (!_cache.TryGetValue(year, out blob))
+            if (!_cache.TryGetValue(name, out blob))
             {
-                blob = new PageBlobState(_directory, _logFileName(year));
+                blob = new PageBlobState(_directory, name);
                 blob.Open();
-                _cache[year] = blob;
+                _cache[name] = blob;
             }
             return blob;
         }

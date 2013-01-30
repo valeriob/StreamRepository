@@ -14,19 +14,35 @@ namespace StreamRepository.FileSystem
         Dictionary<string, FileInfo> _fileCache;
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
-        DirectoryInfo _folder;
+        DirectoryInfo _directory;
         ShardingStrategy _sharding;
 
 
-        public FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
+        FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
         {
             _sharding = sharding;
-            _folder = folder;
-            if (!folder.Exists)
-                folder.Create();
+            _directory = folder;
             _fileCache = new Dictionary<string, FileInfo>();
         }
 
+
+        public static FileSystemRepository OperOrCreate(DirectoryInfo directory, ShardingStrategyFactory factory, ShardingStrategy sharding)
+        {
+            string index = FileUtilities.Get_Index_File(directory);
+
+            if (!directory.Exists)
+            {
+                directory.Create();
+                File.AppendAllText(index, sharding.GetId() + "");
+            }
+            else
+            {
+                var lines = File.ReadAllLines(index);
+                var id = Guid.Parse(lines.First());
+                sharding = factory.Create(id);
+            }
+            return new FileSystemRepository(directory, sharding);
+        }
 
 
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
@@ -150,24 +166,25 @@ namespace StreamRepository.FileSystem
 
         Stream Open_Stream_For_Reading(string name)
         {
-            return Get_Year_With_Caching(name).OpenRead();
+            return Get_FileInfo_With_Caching(name).OpenRead();
         }
 
         Stream Open_Stream_For_Writing(string name)
         {
             //return new FileStream(Get_Year_With_Caching(year).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
            // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
-            return Get_Year_With_Caching(name).Open(FileMode.Open);
+            return Get_FileInfo_With_Caching(name).Open(FileMode.Open);
         }
 
 
-        FileInfo Get_File(string name)
+
+        FileInfo Get_FileInfo(string name)
         {
-            foreach (var file in _folder.GetFiles())
+            foreach (var file in _directory.GetFiles())
                 if (file.Name == name)
                     return file;
 
-            var path = Path.Combine(_folder.FullName, name);
+            var path = Path.Combine(_directory.FullName, name);
 
             using (var stream = File.Create(path))
             {
@@ -181,15 +198,17 @@ namespace StreamRepository.FileSystem
                     header.Serialize(writer);
             }
 
+            File.AppendAllLines(FileUtilities.Get_Index_File(_directory), new[] { name });
+
             return new FileInfo(path);
         }
 
-        FileInfo Get_Year_With_Caching(string name)
+        FileInfo Get_FileInfo_With_Caching(string name)
         {
             FileInfo file = null;
             if (!_fileCache.TryGetValue(name, out file))
             {
-                file = Get_File(name);
+                file = Get_FileInfo(name);
                 _fileCache[name] = file;
             }
             return file;
@@ -197,4 +216,11 @@ namespace StreamRepository.FileSystem
 
     }
 
+    public static class FileUtilities
+    {
+        public static string Get_Index_File(DirectoryInfo directory)
+        {
+            return Path.Combine(directory.FullName, "index.dat");
+        }
+    }
 }

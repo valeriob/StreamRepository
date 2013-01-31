@@ -29,7 +29,7 @@ namespace Stress
 
             /*---------------     FS -------------*/
             //var filePath = @"d:\temp\Amadori";
-            //Account account = new FileSystemAccount(filePath);
+            //Account account = new FileSystemAccount(filePath, new FileSystemFactory());
 
             /*---------------  AZURE  -------------*/
             var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);

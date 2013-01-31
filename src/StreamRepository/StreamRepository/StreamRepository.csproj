@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EventStore.BufferManagement">
-      <HintPath>..\..\..\Lib\EventStore.BufferManagement.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Data.Edm, Version=5.0.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Data.Edm.5.0.2\lib\net40\Microsoft.Data.Edm.dll</HintPath>
@@ -71,6 +68,11 @@
     <Compile Include="Azure\BlobFactory.cs" />
     <Compile Include="Azure\Page.cs" />
     <Compile Include="Azure\Position.cs" />
+    <Compile Include="EventStore.BufferManagement\BufferManager.cs" />
+    <Compile Include="EventStore.BufferManagement\BufferPool.cs" />
+    <Compile Include="EventStore.BufferManagement\BufferPoolStream.cs" />
+    <Compile Include="EventStore.BufferManagement\UnableToAllocateBufferException.cs" />
+    <Compile Include="EventStore.BufferManagement\UnableToCreateMemoryException.cs" />
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
     <Compile Include="Extensions\System.cs" />
     <Compile Include="FileSystem\FileSystemFactory.cs" />

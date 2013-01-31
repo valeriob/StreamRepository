@@ -26,9 +26,6 @@ namespace StreamRepository.FileSystem
         }
 
 
-  
-
-
         public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values) )
@@ -50,28 +47,18 @@ namespace StreamRepository.FileSystem
                                 new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
                         stream.Seek(tail, SeekOrigin.Begin);
-
+                        buffer.Seek(0, SeekOrigin.Begin);
                         int writtenBytes = group.Count() * FramedValue.SizeInBytes();
                         buffer.CopyTo(stream);
+                        stream.Flush();
                         //stream.Write(buffer.GetBuffer(), 0, writtenBytes);
 
                         tail = tail + writtenBytes;
                     }
 
-                    using (var buffer = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(buffer))
-                        {
-                            header.Index = tail;
-                            header.Timestamp = DateTime.Now;
-                            header.Serialize(writer);
-                        }
-
-                        stream.Seek(0, SeekOrigin.Begin);
-
-                        stream.Write(buffer.GetBuffer(), 0, StreamHeader.SizeInBytes());
-                    }
-                    stream.Flush();
+                    header.Index = tail;
+                    header.Timestamp = DateTime.Now;
+                    Write_Header(header, NamingUtilities.Get_Index_File(_directory));
                 }
             }
         }
@@ -145,6 +132,26 @@ namespace StreamRepository.FileSystem
             catch (System.IO.EndOfStreamException)
             {
                 return new StreamHeader() { Index = StreamHeader.SizeInBytes() };
+            }
+        }
+
+        void Write_Header(StreamHeader header, string name)
+        {
+            using (var buffer = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(buffer, Encoding.UTF8, true))
+                {
+                    header.Serialize(writer);
+                    writer.Flush();
+                }
+
+                buffer.Seek(0, SeekOrigin.Begin);
+
+                using (var stream = Open_Stream_For_Writing(name))
+                {
+                    stream.Write(buffer.GetBuffer(), 0, StreamHeader.SizeInBytes());
+                    stream.Flush();
+                }
             }
         }
 

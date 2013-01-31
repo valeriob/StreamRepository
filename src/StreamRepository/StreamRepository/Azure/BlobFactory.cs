@@ -31,12 +31,13 @@ namespace StreamRepository.Azure
         {
             var indexBlob = directory.GetPageBlobReference(NamingUtilities.Get_Index_File(directory));
 
-            if (StreamExists(directory))
+            if (Stream_does_not_exists(directory))
             {
                 using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
                 {
                     byte[] buffer = new byte[PageBlobState.PageSize];
                     var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
+                    id = id + Environment.NewLine;
                     var bytes = Encoding.UTF8.GetBytes(id);
                     Array.Copy(bytes, buffer, bytes.Length);
                     stream.Write(buffer, 0, buffer.Length);
@@ -57,7 +58,7 @@ namespace StreamRepository.Azure
         }
 
 
-        bool StreamExists(CloudBlobDirectory directory)
+        bool Stream_does_not_exists(CloudBlobDirectory directory)
         {
             return !directory.ListBlobs().Any();
         }

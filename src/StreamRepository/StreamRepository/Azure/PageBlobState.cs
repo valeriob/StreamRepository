@@ -16,7 +16,6 @@ namespace StreamRepository.Azure
         public static readonly Int16 PageSize = 512;
         CloudBlobDirectory _directory;
         CloudPageBlob _blob;
-        CloudPageBlob _index;
 
         Position _commitPosition = Position.Start;
         Page _lastPage;
@@ -26,7 +25,6 @@ namespace StreamRepository.Azure
         {
             _directory = directory;
             _blob = directory.GetPageBlobReference(name);
-            _index = directory.GetPageBlobReference(name + "-index");
         }
 
 
@@ -37,15 +35,17 @@ namespace StreamRepository.Azure
                 _blob.Create(PageSize * 128);
                 _blob.Metadata[Metadata_Size] = "0";
 
-                var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
+                //var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
 
-                using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
-                {
-                    byte[] buffer = new byte[PageBlobState.PageSize];
-                    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last());
-                    Array.Copy(bytes, buffer, bytes.Length);
-                    stream.Write(buffer, 0, buffer.Length);
-                }
+                //var position = Get_Committed_Length_For(indexBlob);
+                //using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
+                //{
+                //    stream.Seek(position / PageBlobState.PageSize, SeekOrigin.Begin);
+                //    byte[] buffer = new byte[PageBlobState.PageSize];
+                //    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last() + Environment.NewLine);
+                //    Array.Copy(bytes, buffer, bytes.Length);
+                //    stream.Write(buffer, 0, buffer.Length);
+                //}
             }
             else
                 _blob.FetchAttributes();
@@ -66,7 +66,7 @@ namespace StreamRepository.Azure
 
         public void Append(byte[] buffer, int start, int count)
         {
-            Ensure_There_Is_Space_For(count, true);
+            Ensure_There_Is_Space_For_More(count);
 
             int copied = start;
             int initialPageUsed = 0;
@@ -137,24 +137,31 @@ namespace StreamRepository.Azure
             }
         }
 
-        public void Ensure_There_Is_Space_For(int lenght, bool relative = false)
+        public void Ensure_There_Is_Space_For(int lenght)
         {
-            lenght = Math.Max(lenght, 1024 * 1024);
+            if (_blob.Properties.Length != 0)
+                throw new Exception("Already initialize");
+                
+            _blob.Resize(lenght);
+        }
+
+        public void Ensure_There_Is_Space_For_More(int lenght)
+        {
             int rem;
             int pages = Math.DivRem(lenght, PageSize, out rem);
             if (rem > 0)
                 pages++;
 
-            int neededSize = pages * PageSize;
-            if (relative)
-                neededSize += _commitPosition.ToLinearAddress();
+            int neededSize = pages * PageSize + _commitPosition.ToLinearAddress();
 
             if (_blob.Properties.Length < neededSize)
             {
                 try
                 {
-                   // neededSize = Math.Min(1024 * 1024, neededSize);
-                    _blob.Resize(neededSize);
+                    var min = Math.Min(pages * PageSize, 1024 * 1024);
+                    var value = Math.Max(min, 1024 * 1024);
+                    _blob.Resize(value);
+                    //_blob.Resize(neededSize);
                 }
                 catch (StorageException)
                 {
@@ -165,31 +172,35 @@ namespace StreamRepository.Azure
         }
 
 
-        int Get_Committed_Length()
+        Position Get_Committed_Position()
+        {
+            var length = Get_Committed_Length_For(_blob);
+            return new Position(length);
+        }
+
+        void Commit_Position(int length)
+        {
+            Commit_Length_For(_blob, length);
+            _commitPosition = new Position(length);
+        }
+
+
+
+        int Get_Committed_Length_For(CloudPageBlob blob)
         {
             int length = 0;
-            string s = _blob.Metadata[Metadata_Size];
+            string s = blob.Metadata[Metadata_Size];
             if (!int.TryParse(_blob.Metadata[Metadata_Size], out length))
                 throw new Exception("i could not find the actual size of the blob");
 
             return length;
         }
 
-        Position Get_Committed_Position()
+        void Commit_Length_For(CloudPageBlob blob, int length)
         {
-            var length = Get_Committed_Length();
-            return new Position(length);
+            blob.Metadata[Metadata_Size] = length + "";
+            blob.SetMetadata();
         }
-
-        void Commit_Position(int length)
-        {
-            _blob.Metadata[Metadata_Size] = length +"";
-            _blob.SetMetadata();
-
-            _commitPosition = new Position(length);
-        }
-
-       
     }
 
 }

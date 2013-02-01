@@ -48,6 +48,7 @@ namespace StreamRepository.Azure
         {
             _blob.Create(PageSize * 128);
             _blob.Metadata[Metadata_Size] = "0";
+            _blob.SetMetadata();
         }
 
         public void Append(byte[] buffer, int start, int count)
@@ -94,6 +95,11 @@ namespace StreamRepository.Azure
             _lastPage = lastPage;
         }
 
+        public void Append(string text)
+        {
+            var buffer = Encoding.UTF8.GetBytes(text);
+            Append(buffer, 0, buffer.Length);
+        }
 
         public IEnumerable<RecordValue> Read_Values()
         {

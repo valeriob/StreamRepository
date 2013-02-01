@@ -88,35 +88,23 @@ namespace StreamRepository.Azure
             if (!_cache.TryGetValue(name, out blob))
             {
                 blob = new PageBlobState(_directory, name);
+                Create_And_Register_Blob_On_Index_If_Necessary(blob, name);
                 blob.Open();
                 _cache[name] = blob;
             }
             return blob;
         }
 
-        void Register_Blob_On_Index(PageBlobState blob)
+        void Create_And_Register_Blob_On_Index_If_Necessary(PageBlobState blob, string name)
         {
             if (!blob.Exists())
+            {
                 blob.Create();
 
-            var indexBlob = new PageBlobState(_directory, NamingUtilities.Get_Index_File(_directory));
-            if (!indexBlob.Exists())
-                indexBlob.Create();
-
-      
-                //var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
-
-                //var position = Get_Committed_Length_For(indexBlob);
-                //using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
-                //{
-                //    stream.Seek(position / PageBlobState.PageSize, SeekOrigin.Begin);
-                //    byte[] buffer = new byte[PageBlobState.PageSize];
-                //    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last() + Environment.NewLine);
-                //    Array.Copy(bytes, buffer, bytes.Length);
-                //    stream.Write(buffer, 0, buffer.Length);
-                //}
-            
-
+                var index = new PageBlobState(_directory, NamingUtilities.Get_Index_File(_directory));
+                index.Open();
+                index.Append(name + Environment.NewLine);
+            }
         }
 
     }

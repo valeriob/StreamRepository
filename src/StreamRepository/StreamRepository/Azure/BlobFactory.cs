@@ -33,15 +33,11 @@ namespace StreamRepository.Azure
 
             if (Stream_does_not_exists(directory))
             {
-                using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
-                {
-                    byte[] buffer = new byte[PageBlobState.PageSize];
-                    var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
-                    id = id + Environment.NewLine;
-                    var bytes = Encoding.UTF8.GetBytes(id);
-                    Array.Copy(bytes, buffer, bytes.Length);
-                    stream.Write(buffer, 0, buffer.Length);
-                }
+                var state = new PageBlobState(directory, NamingUtilities.Get_Index_File(directory));
+                state.Create();
+                state.Open();
+                var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
+                state.Append(id);
             }
             else
             {

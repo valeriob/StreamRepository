@@ -94,6 +94,31 @@ namespace StreamRepository.Azure
             return blob;
         }
 
+        void Register_Blob_On_Index(PageBlobState blob)
+        {
+            if (!blob.Exists())
+                blob.Create();
+
+            var indexBlob = new PageBlobState(_directory, NamingUtilities.Get_Index_File(_directory));
+            if (!indexBlob.Exists())
+                indexBlob.Create();
+
+      
+                //var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
+
+                //var position = Get_Committed_Length_For(indexBlob);
+                //using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
+                //{
+                //    stream.Seek(position / PageBlobState.PageSize, SeekOrigin.Begin);
+                //    byte[] buffer = new byte[PageBlobState.PageSize];
+                //    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last() + Environment.NewLine);
+                //    Array.Copy(bytes, buffer, bytes.Length);
+                //    stream.Write(buffer, 0, buffer.Length);
+                //}
+            
+
+        }
+
     }
 
 }

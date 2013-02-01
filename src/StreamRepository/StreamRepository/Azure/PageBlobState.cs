@@ -29,29 +29,10 @@ namespace StreamRepository.Azure
 
 
         public void Open()
-        {
-            if (!_blob.Exists())
-            {
-                _blob.Create(PageSize * 128);
-                _blob.Metadata[Metadata_Size] = "0";
-
-                //var indexBlob = _directory.GetPageBlobReference(NamingUtilities.Get_Index_File(_directory));
-
-                //var position = Get_Committed_Length_For(indexBlob);
-                //using (var stream = indexBlob.OpenWrite(PageBlobState.PageSize))
-                //{
-                //    stream.Seek(position / PageBlobState.PageSize, SeekOrigin.Begin);
-                //    byte[] buffer = new byte[PageBlobState.PageSize];
-                //    var bytes = Encoding.UTF8.GetBytes(_blob.Uri.Segments.Last() + Environment.NewLine);
-                //    Array.Copy(bytes, buffer, bytes.Length);
-                //    stream.Write(buffer, 0, buffer.Length);
-                //}
-            }
-            else
-                _blob.FetchAttributes();
+        {                
+            _blob.FetchAttributes();
 
             _commitPosition = Get_Committed_Position();
-
 
             byte[] lastPage = new byte[PageSize];
             using (var stream = _blob.OpenRead())
@@ -63,6 +44,11 @@ namespace StreamRepository.Azure
             _lastPage = new Page(_commitPosition, lastPage);
         }
 
+        public void Create()
+        {
+            _blob.Create(PageSize * 128);
+            _blob.Metadata[Metadata_Size] = "0";
+        }
 
         public void Append(byte[] buffer, int start, int count)
         {
@@ -200,6 +186,11 @@ namespace StreamRepository.Azure
         {
             blob.Metadata[Metadata_Size] = length + "";
             blob.SetMetadata();
+        }
+
+        internal bool Exists()
+        {
+            return _blob.Exists();
         }
     }
 

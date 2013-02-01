@@ -39,10 +39,10 @@ namespace StreamRepository.Azure
             return Page * PageBlobState.PageSize + Offset;
         }
 
-        public int ToPageAddress()
-        {
-            return Page * PageBlobState.PageSize;
-        }
+        //public int ToPageAddress()
+        //{
+        //    return Page * PageBlobState.PageSize;
+        //}
 
         public static Position operator +(Position position, int increment)
         {

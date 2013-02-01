@@ -15,6 +15,9 @@ namespace StreamRepository.Azure
 
         public Page(Position position, byte[] data)
         {
+            if (data == null || data.Length != PageBlobState.PageSize)
+                throw new Exception("page data must be 512 in size");
+
             Position = position;
             _data = data;
         }
@@ -56,7 +59,24 @@ namespace StreamRepository.Azure
         public void WriteToBlob(CloudPageBlob blob)
         {
             using (var stream = ToStream())
-                blob.WritePages(stream, Position.ToPageAddress());
+                blob.WritePages(stream, GetBaseAddress());
+        }
+
+        public void FillFromBlob(CloudPageBlob blob)
+        {
+            using (var stream = blob.OpenRead())
+            {
+                stream.Seek(this.GetBaseAddress(), SeekOrigin.Begin);
+                stream.Read(_data, 0, PageBlobState.PageSize);
+            }
+        }
+        public async Task FillFromBlobAsync(CloudPageBlob blob)
+        {
+            using (var stream = blob.OpenRead())
+            {
+                stream.Seek(this.GetBaseAddress(), SeekOrigin.Begin);
+                await stream.ReadAsync(_data, 0, PageBlobState.PageSize);
+            }
         }
 
         public int Free_Space()
@@ -78,7 +98,21 @@ namespace StreamRepository.Azure
             return (IsEmpty() && count < PageBlobState.PageSize) || Free_Space() < PageBlobState.PageSize;
         }
 
-        public int Fill(byte[] buffer, int start, int count)
+        public int Override(byte[] buffer, int start, int count)
+        {
+            if (count < 0)
+                throw new ArgumentOutOfRangeException("count");
+
+            int toCopy = Math.Min(PageBlobState.PageSize, count);
+
+            Array.Copy(buffer, start, _data, 0, toCopy);
+
+            Position = Position + toCopy;
+
+            return toCopy;
+        }
+
+        public int Append(byte[] buffer, int start, int count)
         {
             if (count < 0)
                 throw new ArgumentOutOfRangeException("count");
@@ -97,7 +131,10 @@ namespace StreamRepository.Azure
             return new Page(Position, _data);
         }
 
-
+        public int GetBaseAddress()
+        {
+            return Position.Page * PageBlobState.PageSize;
+        }
 
         public override string ToString()
         {

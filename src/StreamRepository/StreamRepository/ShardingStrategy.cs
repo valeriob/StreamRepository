@@ -10,15 +10,8 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    //public interface ShardingStrategyFactory
-    //{
-    //    ShardingStrategy Create(Guid strategyId);
-    //}
-
     public interface ShardingStrategy
     {
-        //Guid GetId();
-
         IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
 
         IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null);
@@ -34,48 +27,6 @@ namespace StreamRepository
         IEnumerable<Tuple<DateTime, double, int>> GetValues();
     }
 
-
-    //public class ShardingStrategyFactoryImpl : ShardingStrategyFactory
-    //{
-    //    [ImportMany(typeof(ShardingStrategy))]
-    //    List<ShardingStrategy> _strategies;
-
-    //    static CompositionContainer _container;
-
-    //    static ShardingStrategyFactoryImpl()
-    //    {
-    //        var _catalog = new AggregateCatalog();
-    //        _catalog.Catalogs.Add(new AssemblyCatalog(typeof(ShardingStrategyFactoryImpl).Assembly));
-
-    //        _container = new CompositionContainer(_catalog, CompositionOptions.DisableSilentRejection | CompositionOptions.IsThreadSafe);
-    //    }
-
-    //    static ShardingStrategyFactory _instance;
-    //    public static ShardingStrategyFactory Instance()
-    //    {
-    //        if (_instance == null)
-    //            _instance = new ShardingStrategyFactoryImpl();
-
-    //        return _instance;
-    //    }
-
-
-    //    Dictionary<string, ShardingStrategy> _dictionary;
-    //    ShardingStrategyFactoryImpl()
-    //    {
-    //        _container.SatisfyImportsOnce(this);
-    //        _dictionary = _strategies.ToDictionary(s => s.GetType().GetAttribute<GuidAttribute>().Value);
-    //    }
-
-    //    public ShardingStrategy Create(Guid strategyId)
-    //    {
-    //        ShardingStrategy strategy;
-    //        if (!_dictionary.TryGetValue(strategyId + "", out strategy))
-    //            throw new Exception("strategy could not be found : " + strategyId);
-
-    //        return strategy;
-    //    }
-    //}
 
     [Export(typeof(ShardingStrategy))]
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]

@@ -78,7 +78,7 @@ namespace StreamRepository.Azure
             if (!_cache.TryGetValue(name, out blob))
             {
                 blob = new PageBlobState(_directory.GetPageBlobReference(name));
-                blob.Create_if_does_not_exists();
+                //blob.Create_if_does_not_exists();
                 blob.Open();
 
                 _cache[name] = blob;

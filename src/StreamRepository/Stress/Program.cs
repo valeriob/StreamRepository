@@ -42,6 +42,7 @@ namespace Stress
             container.CreateIfNotExists();
             Account account = new BlobAccount(container, new BlobFactory());
 
+ 
             //while (true)
             //{
             //    watch = Stopwatch.StartNew();

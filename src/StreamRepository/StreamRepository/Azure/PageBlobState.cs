@@ -16,7 +16,7 @@ namespace StreamRepository.Azure
         public static readonly string Metadata_Size = "Size";
         public static readonly Int16 PageSize = 512;
         CloudPageBlob _blob;
-
+        bool _isNew;
         Position _commitPosition = Position.Start;
         Page _lastPage;
 
@@ -28,8 +28,17 @@ namespace StreamRepository.Azure
 
 
         public void Open()
-        {                
-            _blob.FetchAttributes();
+        {
+            try
+            {
+                _blob.FetchAttributes();
+            }
+            catch (StorageException ex)
+            {
+                if (ex.RequestInformation.HttpStatusCode != 404)
+                    throw;
+                _isNew = true;
+            }
 
             _commitPosition = Get_Committed_Position();
 
@@ -52,7 +61,7 @@ namespace StreamRepository.Azure
                 return;
             _blob.Create(PageSize * 128);
             _blob.Metadata[Metadata_Size] = "0";
-            _blob.SetMetadata();
+            //_blob.SetMetadata();
         }
 
 
@@ -144,8 +153,12 @@ namespace StreamRepository.Azure
 
             Debug.Assert(position + count == currentPosition);
             Debug.Assert(copied == count);
+            Debug.Assert(_isNew && firstPageNumber  == 0);
 
-            _blob.WritePages(bufferedPages, firstPageNumber * PageSize);
+            if (_isNew)
+                _blob.UploadFromStream(bufferedPages);
+            else
+                _blob.WritePages(bufferedPages, firstPageNumber * PageSize);
 
             if (_commitPosition.ToLinearAddress() < position + copied)
             {
@@ -244,12 +257,10 @@ namespace StreamRepository.Azure
 
         int Get_Committed_Length_For(CloudPageBlob blob)
         {
-            int length = 0;
-            string s = blob.Metadata[Metadata_Size];
-            if (!int.TryParse(_blob.Metadata[Metadata_Size], out length))
-                throw new Exception("i could not find the actual size of the blob");
+            if (!blob.Metadata.ContainsKey(Metadata_Size))
+                return 0;
 
-            return length;
+            return int.Parse(_blob.Metadata[Metadata_Size]);
         }
 
         void Commit_Length_For(CloudPageBlob blob, int length)

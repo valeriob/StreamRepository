@@ -17,7 +17,7 @@ namespace StreamRepository
         public FramedValue(DateTime timestamp, double value, int importId)
         {
             Timestamp = timestamp.ToUniversalTime();
-            Value = Value;
+            Value = value;
             ImportId = importId;
         }
 

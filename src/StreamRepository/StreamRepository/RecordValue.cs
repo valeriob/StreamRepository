@@ -24,7 +24,7 @@ namespace StreamRepository
             get
             {
                 if (_value == null)
-                    _value = BitConverter.ToDouble(_buffer, 0);
+                    _value = BitConverter.ToDouble(_buffer, 8);
                 return _value.Value;
             }
         }
@@ -34,7 +34,7 @@ namespace StreamRepository
             get
             {
                 if (_importId == null)
-                    _importId = BitConverter.ToInt32(_buffer, 0);
+                    _importId = BitConverter.ToInt32(_buffer, 16);
                 return _importId.Value;
             }
         }

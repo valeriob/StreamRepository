@@ -258,8 +258,7 @@ namespace EventStore.BufferManagement
             {
                 Position l = GetPositionFor(currentLocation);
                 ArraySegment<byte> current = _buffers[l.Index];
-                //int bytesToRead = _chunkSize - l.Offset;
-                //bytesToRead = bytesToRead > totalToBeRead - copied ? totalToBeRead - copied : bytesToRead;
+                //int bytesToRead = Math.Min(_chunkSize - l.Offset, data.Count);
                 int bytesToRead = Math.Min(totalToBeRead - copied, _chunkSize - l.Offset);
                 if (bytesToRead > 0)
                     Buffer.BlockCopy(current.Array, current.Offset + l.Offset, data.Array, data.Offset + copied, bytesToRead);

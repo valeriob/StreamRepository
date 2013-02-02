@@ -30,17 +30,18 @@ namespace StreamRepository.Azure
             foreach (var shard in _sharding.Shard(values))
             {
                 var group = shard.GetValues();
-                using (var stream = new MemoryStream())
+                using (var stream = new BufferPoolStream(new BufferPool()))
                 {
-                    using (var writer = new BinaryWriter(stream))
+                    using (var writer = new BinaryWriter(stream,Encoding.UTF8, true))
                         foreach (var value in group)
                             new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
                     int writtenBytes = group.Count() * FramedValue.SizeInBytes();
 
                     var blob = OpenBlobFor(shard.GetName());
-
-                    blob.Append(stream.GetBuffer(), 0, writtenBytes);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    //blob.Append(stream.GetBuffer(), 0, writtenBytes);
+                    blob.Append(stream);
                 }
             }
         }

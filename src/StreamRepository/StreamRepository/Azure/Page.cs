@@ -98,6 +98,9 @@ namespace StreamRepository.Azure
             return (IsEmpty() && count < PageBlobState.PageSize) || Free_Space() < PageBlobState.PageSize;
         }
 
+
+
+
         public int Override(byte[] buffer, int start, int count)
         {
             if (count < 0)
@@ -112,6 +115,21 @@ namespace StreamRepository.Azure
             return toCopy;
         }
 
+        public int Override(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+
+            int toCopy = (int)Math.Min(PageBlobState.PageSize, stream.Length - stream.Position);
+
+            stream.Read(_data, 0, toCopy);
+
+            Position = Position + toCopy;
+
+            return toCopy;
+        }
+
         public int Append(byte[] buffer, int start, int count)
         {
             if (count < 0)
@@ -120,6 +138,19 @@ namespace StreamRepository.Azure
             int toCopy = Math.Min(Free_Space(), count);
 
             Array.Copy(buffer, start, _data, Position.Offset, toCopy);
+
+            Position = Position + toCopy;
+
+            return toCopy;
+        }
+        public int Append(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            int toCopy = (int)Math.Min(Free_Space(), stream.Length - stream.Position);
+
+            stream.Read(_data, Position.Offset, toCopy);
 
             Position = Position + toCopy;
 

@@ -137,7 +137,8 @@ namespace StreamRepository.FileSystem
 
         void Write_Header(StreamHeader header, string name)
         {
-            using (var buffer = new MemoryStream())
+            //using (var buffer = new MemoryStream())
+            using (var buffer = new BufferPoolStream(new BufferPool()))
             {
                 using (var writer = new BinaryWriter(buffer, Encoding.UTF8, true))
                 {
@@ -149,7 +150,8 @@ namespace StreamRepository.FileSystem
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
-                    stream.Write(buffer.GetBuffer(), 0, StreamHeader.SizeInBytes());
+                    buffer.CopyTo(stream);
+                    //stream.Write(buffer.GetBuffer(), 0, StreamHeader.SizeInBytes());
                     stream.Flush();
                 }
             }

@@ -30,19 +30,19 @@ namespace StreamRepository.Azure
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
             var index = NamingUtilities.Get_Index_File(_directory);
-            foreach (var file in File.ReadAllLines(index).Skip(1))
+            var blob = _directory.GetPageBlobReference(index);
+            using (var stream = blob.OpenRead())
+            using(var reader = new StreamReader(stream))
             {
-                int year = int.Parse(file);
+                var line = reader.ReadLine();
 
-                yield return new YearGroup(year, null);
+                while ( (line = reader.ReadLine() ) != null)
+                {
+                    int year = int.Parse(line);
+
+                    yield return new YearGroup(year, null);
+                }
             }
-           // return _directory.GetFiles().Select(f => new
-           // {
-           //     f,
-           //     f.Name,
-           //     Year = Convert.ToInt32(Path.GetFileNameWithoutExtension(f.FullName))
-           // }).OrderBy(d => d.Year)
-           //.Select(s => new YearGroup(s.Year, Enumerable.Empty<Tuple<DateTime, double, int>>()));
         }
 
         public Guid GetId()

@@ -52,7 +52,7 @@ namespace StreamRepository.Azure
 
         public override string ToString()
         {
-            return string.Format("Page {0}, Offset {1}", Page, Offset);
+            return string.Format("Page {0}, Offset {1}.   Linear {2}", Page, Offset, ToLinearAddress());
         }
     }
 }

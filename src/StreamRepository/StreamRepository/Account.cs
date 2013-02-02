@@ -9,10 +9,6 @@ namespace StreamRepository
 {
     public abstract class Account
     {
-        static readonly int OgniQuartoDiOra = 15 * 60;
-        static readonly int OgniMinuto = 60;
-
-
         public void Read_Streams()
         {
             long values = 0;
@@ -23,7 +19,7 @@ namespace StreamRepository
             {
                 streams++;
                 var repository = Build_Repository(stream);
-                foreach (var value in repository.Get_Raw_Values())
+                foreach (var value in repository.Get_Values())
                     values++;
 
                 var speed = values / watch.Elapsed.TotalSeconds;
@@ -34,7 +30,7 @@ namespace StreamRepository
             Console.WriteLine("read {0} values in {1} streams in {2}", values, streams, watch.Elapsed);
         }
 
-        public void Write_Streams(int streams, int years)
+        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds)
         {
             var options = new ParallelOptions
             {
@@ -42,7 +38,7 @@ namespace StreamRepository
             };
             try
             {
-                Write_Stream(Guid.NewGuid() + "", years);
+                Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
             }
             catch (AggregateException ex)
             {
@@ -57,12 +53,12 @@ namespace StreamRepository
             //});
         }
 
-        public void Write_Stream(string name, int years)
+        public void Write_Stream(string name, int years, int samplingPeriodInSeconds)
         {
             var repository = Build_Repository(name);
 
             for (int year = DateTime.Now.Year - years; year < DateTime.Now.Year; year++)
-                Write_Year(repository, year, OgniQuartoDiOra);
+                Write_Year(repository, year, samplingPeriodInSeconds);
         }
 
         public void Write_Year(Repository repository, int year, int samplingPeriodInSeconds)

@@ -16,6 +16,10 @@ namespace Stress
 {
     class Program
     {
+        static readonly int Uno = 365 * 24 * 60 * 60;
+        static readonly int OgniQuartoDiOra = 15 * 60;
+        static readonly int OgniMinuto = 60;
+
         static void Main(string[] args)
         {
             Stopwatch watch = null;
@@ -56,7 +60,7 @@ namespace Stress
 
             watch = Stopwatch.StartNew();
             account.Reset();
-            account.Write_Streams(1, 5);
+            account.Write_Streams(1, 1, Uno);
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 

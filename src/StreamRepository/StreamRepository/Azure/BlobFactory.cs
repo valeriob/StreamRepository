@@ -36,7 +36,7 @@ namespace StreamRepository.Azure
                 var state = new PageBlobState(directory, NamingUtilities.Get_Index_File(directory));
                 state.Create();
                 state.Open();
-                var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
+                var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value + Environment.NewLine;
                 state.Append(id);
             }
             else

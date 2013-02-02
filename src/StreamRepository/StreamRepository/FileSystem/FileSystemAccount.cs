@@ -25,7 +25,9 @@ namespace StreamRepository.FileSystem
         public override Repository Build_Repository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
-            var defaultSharding = new FilePerYearShardingStrategy(directory);
+            if (!directory.Exists)
+                directory.Create();
+            var defaultSharding = new FilePerYearShardingStrategy(directory.GetFiles());
 
             return _factory.OperOrCreate(directory, defaultSharding);
         }

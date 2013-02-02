@@ -69,7 +69,10 @@ namespace StreamRepository.Azure
             WriteAt(_commitPosition.ToLinearAddress(), stream);
         }
 
-
+        public void WriteAt(int position, byte[] buffer, int start, int count)
+        {
+            WriteAt(position, new MemoryStream(buffer, start, count));
+        }
 
         public void WriteAt(int position, Stream stream)
         {
@@ -150,80 +153,6 @@ namespace StreamRepository.Azure
 
 
 
-        public void WriteAt(int position, byte[] buffer, int start, int count)
-        {
-            WriteAt(position, new MemoryStream(buffer, start, count));
-            return;
-
-            Ensure_There_Is_Space_For_More(count);
-
-            int copied = start;
-            int initialPageUsed = 0;
-            int page = position / PageSize;
-
-            Page firstPage = new Page(position);
-            Page lastPage = new Page(position + count);
-            Task lastFilling = null;
-
-            if (position == _commitPosition.ToLinearAddress())
-                firstPage = _lastPage;
-            else
-                firstPage.FillFromBlob(_blob);
-
-            if (page == ((position + count) / PageSize))
-                lastPage = firstPage;
-            else
-                lastFilling = lastPage.FillFromBlobAsync(_blob);
-
-
-            if (firstPage.Is_empty_and_can_contain_all_data___or___Is_not_empty(count))
-            {
-                copied = firstPage.Append(buffer, start, count);
-                firstPage.WriteToBlob(_blob);
-
-                initialPageUsed = 1;
-            }
-
-            if (copied < count)
-            {
-                int rem;
-                int fullPages = Math.DivRem(count - copied, PageSize, out rem);
-
-                if (fullPages > 0)
-                {
-                    using (var stream = new MemoryStream(buffer, start + copied, count - copied - rem))
-                        _blob.WritePages(stream, (page + initialPageUsed) * PageSize);
-
-                    copied = count - rem;
-                }
-
-                if (copied < count)
-                {
-                    int currentPosition = (page + fullPages + initialPageUsed) * PageSize;
-                    lastPage = new Page(currentPosition);
-
-                    if (rem > 0)
-                    {
-                        if (lastFilling != null)
-                            lastFilling.Wait();
-
-                        lastPage.Fill_From(buffer, start + count - rem, rem);
-                        lastPage.WriteToBlob(_blob);
-                    }
-
-                    copied += rem;
-                }
-
-            }
-
-            if (_commitPosition.ToLinearAddress() < position + copied)
-            {
-                Commit_Position(position + copied);
-                _lastPage = lastPage;
-            }
-        }
-
-
         public Stream OpenReadonlyStream()
         {
             return new StreamSegment(_blob.OpenRead(), 0, _commitPosition.ToLinearAddress());
@@ -274,15 +203,16 @@ namespace StreamRepository.Azure
             if (rem > 0)
                 pages++;
 
-            int neededSize = pages * PageSize + _commitPosition.ToLinearAddress();
+            int growth = 1024 * 1024;
+            int neededSize = ((pages * PageSize + _commitPosition.ToLinearAddress()) / growth + 1 ) *growth;
 
             if (_blob.Properties.Length < neededSize)
             {
                 try
                 {
-                    var min = Math.Min(pages * PageSize, 1024 * 1024);
-                    var value = Math.Max(min, 1024 * 1024);
-                    _blob.Resize(value);
+                    //var min = Math.Min(neededSize, 1024 * 1024);
+                    //var value = Math.Max(min, 1024 * 1024);
+                    _blob.Resize(neededSize);
                     //_blob.Resize(neededSize);
                 }
                 catch (StorageException)

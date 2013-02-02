@@ -42,10 +42,11 @@ namespace StreamRepository.Azure
             {
                 var factory = blobs.Select(s=> s.Uri.Segments.Last())
                     .Single(b => b.StartsWith(Sharding));
+                var dataBlobs = blobs.Where(s => !s.Uri.Segments.Last().StartsWith(Sharding)).ToList();
 
                 int spearatorIndex = factory.IndexOf('-');
                 var id = factory.Substring(spearatorIndex + 1);
-                sharding = _buildStrategy(id, blobs);
+                sharding = _buildStrategy(id, dataBlobs);
             }
 
             return new AzureBlobRepository(directory, sharding);

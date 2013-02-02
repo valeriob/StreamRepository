@@ -39,9 +39,7 @@ namespace StreamRepository.FileSystem
                     var tail = header.Index;
 
                     using (var buffer = new BufferPoolStream(new BufferPool()))
-                    //using (var buffer = new MemoryStream())
                     {
-                       // var writer = new BinaryWriter(buffer, Encoding.Default, true);
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
                             foreach (var value in group)
                                 new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
@@ -51,15 +49,15 @@ namespace StreamRepository.FileSystem
                         int writtenBytes = group.Count() * FramedValue.SizeInBytes();
                         buffer.CopyTo(stream);
                         stream.Flush();
-                        //stream.Write(buffer.GetBuffer(), 0, writtenBytes);
 
                         tail = tail + writtenBytes;
                     }
 
                     header.Index = tail;
                     header.Timestamp = DateTime.Now;
-                    Write_Header(header, NamingUtilities.Get_Index_File(_directory));
+                   
                 }
+                Write_Header(header, name);
             }
         }
 
@@ -137,7 +135,6 @@ namespace StreamRepository.FileSystem
 
         void Write_Header(StreamHeader header, string name)
         {
-            //using (var buffer = new MemoryStream())
             using (var buffer = new BufferPoolStream(new BufferPool()))
             {
                 using (var writer = new BinaryWriter(buffer, Encoding.UTF8, true))
@@ -151,7 +148,6 @@ namespace StreamRepository.FileSystem
                 using (var stream = Open_Stream_For_Writing(name))
                 {
                     buffer.CopyTo(stream);
-                    //stream.Write(buffer.GetBuffer(), 0, StreamHeader.SizeInBytes());
                     stream.Flush();
                 }
             }
@@ -191,7 +187,7 @@ namespace StreamRepository.FileSystem
                     header.Serialize(writer);
             }
 
-            File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
+            //File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
 
             return new FileInfo(path);
         }

@@ -13,11 +13,11 @@ namespace StreamRepository.FileSystem
     [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
     public class FilePerYearShardingStrategy : ShardingStrategy
     {
-        DirectoryInfo _directory;
+        IEnumerable<FileInfo> _files;
 
-        public FilePerYearShardingStrategy(DirectoryInfo directory)
+        public FilePerYearShardingStrategy(IEnumerable<FileInfo> files)
         {
-            _directory = directory;
+            _files = files;
         }
 
 
@@ -28,10 +28,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            var index = NamingUtilities.Get_Index_File(_directory);
-            foreach (var file in File.ReadAllLines(index).Skip(1))
+            foreach (var file in _files)
             {
-                int year = int.Parse(file);
+                int year = int.Parse(file.Name);
 
                 if (Shard_Is_In_Between(from, to, year))
                     yield return new YearGroup(year, null);
@@ -83,11 +82,11 @@ namespace StreamRepository.FileSystem
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
     public class FilePerMonthShardingStrategy : ShardingStrategy
     {
-        DirectoryInfo _directory;
+        IEnumerable<FileInfo> _files;
 
-        public FilePerMonthShardingStrategy(DirectoryInfo directory)
+        public FilePerMonthShardingStrategy(IEnumerable<FileInfo> files)
         {
-            _directory = directory;
+            _files = files;
         }
 
 
@@ -98,10 +97,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            var index = NamingUtilities.Get_Index_File(_directory);
-            foreach (var file in File.ReadAllLines(index).Skip(1))
+            foreach (var file in _files)
             {
-                var tokens = file.Split('-');
+                var tokens = file.Name.Split('-');
 
                 int year = int.Parse(tokens[0]);
                 int month = int.Parse(tokens[1]);

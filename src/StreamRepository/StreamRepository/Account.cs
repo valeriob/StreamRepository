@@ -66,7 +66,7 @@ namespace StreamRepository
             var random = new Random();
             var since = new DateTime(year, 1, 1);
             var watch = Stopwatch.StartNew();
-            int batchSize = 13+25;
+            int batchSize = 10000;
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             var batch = new List<Tuple<DateTime, double, int>>();

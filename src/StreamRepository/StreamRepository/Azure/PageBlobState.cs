@@ -34,10 +34,13 @@ namespace StreamRepository.Azure
             _commitPosition = Get_Committed_Position();
 
             byte[] lastPage = new byte[PageSize];
-            using (var stream = _blob.OpenRead())
+            if (_commitPosition.ToLinearAddress() != 0)
             {
-                stream.Seek(_commitPosition.Page * PageSize, SeekOrigin.Begin);
-                stream.Read(lastPage, 0, 512);
+                using (var stream = _blob.OpenRead())
+                {
+                    stream.Seek(_commitPosition.Page * PageSize, SeekOrigin.Begin);
+                    stream.Read(lastPage, 0, 512);
+                }
             }
 
             _lastPage = new Page(_commitPosition, lastPage);
@@ -198,6 +201,7 @@ namespace StreamRepository.Azure
 
         public void Ensure_There_Is_Space_For_More(int lenght)
         {
+            return;
             int rem;
             int pages = Math.DivRem(lenght, PageSize, out rem);
             if (rem > 0)

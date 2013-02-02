@@ -38,7 +38,8 @@ namespace StreamRepository
             };
             try
             {
-                Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+                for (int i = 0; i < streams; i++ )
+                    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
             }
             catch (AggregateException ex)
             {

@@ -32,15 +32,15 @@ namespace Stress
             //Console.WriteLine("cpu speed : " + watch.Elapsed);
 
             /*---------------     FS -------------*/
-            var filePath = @"d:\temp\Amadori";
-            Account account = new FileSystemAccount(filePath, new FileSystemFactory());
+            //var filePath = @"d:\temp\Amadori";
+            //Account account = new FileSystemAccount(filePath, new FileSystemFactory());
 
             /*---------------  AZURE  -------------*/
-            //var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
-            //var blobClient = azureAccount.CreateCloudBlobClient();
-            //var container = blobClient.GetContainerReference("onenergy-amadori");
-            //container.CreateIfNotExists();
-            //Account account = new BlobAccount(container, new BlobFactory());
+            var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
+            var blobClient = azureAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference("onenergy-amadori");
+            container.CreateIfNotExists();
+            Account account = new BlobAccount(container, new BlobFactory());
 
             //while (true)
             //{
@@ -60,7 +60,7 @@ namespace Stress
 
             watch = Stopwatch.StartNew();
             account.Reset();
-            account.Write_Streams(1, 5, OgniMinuto);
+            account.Write_Streams(200, 1, Uno);
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 
@@ -80,20 +80,21 @@ namespace Stress
                 var rep = account.Build_Repository(streams[random.Next(streams.Length)]);
 
                 watch = Stopwatch.StartNew();
-                rep.Get_Raw_Values(new DateTime(2012, 1, 1)).ToList();
+                var count = rep.Get_Raw_Values(new DateTime(2012, 1, 1)).Count();
                 watch.Stop();
 
                 Console.WriteLine("Raw : " + watch.Elapsed);
 
-                watch = Stopwatch.StartNew();
-                rep.Get_Values(new DateTime(2012, 1, 1)).ToList();
-                watch.Stop();
+                //watch = Stopwatch.StartNew();
+                //rep.Get_Values(new DateTime(2012, 1, 1)).ToList();
+                //watch.Stop();
 
-                Console.WriteLine("'Deserialized' : " + watch.Elapsed);
+                //Console.WriteLine("'Deserialized' : " + watch.Elapsed);
             }
 
             Console.ReadLine();
         }
+
 
     }
 

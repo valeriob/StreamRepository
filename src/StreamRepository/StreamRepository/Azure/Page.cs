@@ -10,32 +10,36 @@ namespace StreamRepository.Azure
 {
     public class Page
     {
-        public Position Position { get; private set; }
-        public byte[] _data { get; set; }
+        //public Position Position { get; private set; }
+        int _index;
+        int _offset;
+        byte[] _data;
 
         public Page(Position position, byte[] data)
         {
             if (data == null || data.Length != PageBlobState.PageSize)
                 throw new Exception("page data must be 512 in size");
 
-            Position = position;
+            //Position = position;
+            _index = position.Page;
+            _offset = position.Offset;
             _data = data;
         }
         
-        public Page(Position position)
-            : this(position, new byte[PageBlobState.PageSize])
-        {
-        }
+        //public Page(Position position)
+        //    : this(position, new byte[PageBlobState.PageSize])
+        //{
+        //}
 
-        public Page(int page, int offset, byte[] data)
-            : this(new Position(page, offset), data)
-        {
-        }
+        //public Page(int page, int offset, byte[] data)
+        //    : this(new Position(page, offset), data)
+        //{
+        //}
 
-        public Page(int position, byte[] data)
-            : this(new Position(position), data)
-        {
-        }
+        //public Page(int position, byte[] data)
+        //    : this(new Position(position), data)
+        //{
+        //}
         public Page(int position)
             : this(new Position(position), new byte[PageBlobState.PageSize])
         {
@@ -81,16 +85,16 @@ namespace StreamRepository.Azure
 
         public int Free_Space()
         {
-            return PageBlobState.PageSize - Position.Offset;
+            return PageBlobState.PageSize - _offset;
         }
         public bool IsEmpty()
         {
-            return Position.Offset == 0;
+            return _offset == 0;
         }
 
         public bool IsFull()
         {
-            return Position.Offset == PageBlobState.PageSize;
+            return _offset == PageBlobState.PageSize;
         }
 
         public bool Is_empty_and_can_contain_all_data___or___Is_not_empty(int count)
@@ -101,7 +105,7 @@ namespace StreamRepository.Azure
 
 
 
-        public int Override(byte[] buffer, int start, int count)
+        public int Fill_From(byte[] buffer, int start, int count)
         {
             if (count < 0)
                 throw new ArgumentOutOfRangeException("count");
@@ -110,12 +114,12 @@ namespace StreamRepository.Azure
 
             Array.Copy(buffer, start, _data, 0, toCopy);
 
-            Position = Position + toCopy;
+            _offset += toCopy;
 
             return toCopy;
         }
 
-        public int Override(Stream stream)
+        public int Fill_From(Stream stream)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");
@@ -125,7 +129,7 @@ namespace StreamRepository.Azure
 
             stream.Read(_data, 0, toCopy);
 
-            Position = Position + toCopy;
+            _offset += toCopy;
 
             return toCopy;
         }
@@ -137,9 +141,9 @@ namespace StreamRepository.Azure
 
             int toCopy = Math.Min(Free_Space(), count);
 
-            Array.Copy(buffer, start, _data, Position.Offset, toCopy);
+            Array.Copy(buffer, start, _data, _offset, toCopy);
 
-            Position = Position + toCopy;
+            _offset += toCopy;
 
             return toCopy;
         }
@@ -150,26 +154,26 @@ namespace StreamRepository.Azure
 
             int toCopy = (int)Math.Min(Free_Space(), stream.Length - stream.Position);
 
-            stream.Read(_data, Position.Offset, toCopy);
+            stream.Read(_data, _offset, toCopy);
 
-            Position = Position + toCopy;
+            _offset += toCopy;
 
             return toCopy;
         }
 
         public Page Clone()
         {
-            return new Page(Position, _data);
+            return new Page(new Position(_index, _offset), _data);
         }
 
         public int GetBaseAddress()
         {
-            return Position.Page * PageBlobState.PageSize;
+            return _index * PageBlobState.PageSize;
         }
 
         public override string ToString()
         {
-            return string.Format("{0}", Position);
+            return string.Format("{0}", new Position(_index, _offset));
         }
     }
 }

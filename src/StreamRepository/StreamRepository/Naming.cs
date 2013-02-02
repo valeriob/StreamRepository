@@ -19,5 +19,10 @@ namespace StreamRepository
         {
             return new Uri(directory.Uri, "index.dat").ToString();
         }
+
+        //public static string Get_Factory_Blob(CloudBlobDirectory directory, string factoryId)
+        //{
+        //    return new Uri(directory.Uri, "factory-" + factoryId).ToString();
+        //}
     }
 }

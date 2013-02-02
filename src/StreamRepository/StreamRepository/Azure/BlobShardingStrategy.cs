@@ -14,11 +14,11 @@ namespace StreamRepository.Azure
     [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
     public class BlobPerYearShardingStrategy : ShardingStrategy
     {
-        CloudBlobDirectory _directory;
+        IEnumerable<IListBlobItem> _blobs;
 
-        public BlobPerYearShardingStrategy(CloudBlobDirectory directory)
+        public BlobPerYearShardingStrategy(IEnumerable<IListBlobItem> blobs)
         {
-            _directory = directory;
+            _blobs = blobs;
         }
 
 
@@ -29,20 +29,23 @@ namespace StreamRepository.Azure
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            var index = NamingUtilities.Get_Index_File(_directory);
-            var blob = _directory.GetPageBlobReference(index);
-            using (var stream = blob.OpenRead())
-            using(var reader = new StreamReader(stream))
+            var blobs = _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(BlobFactory.Sharding)).ToList();
+            var shards = new List<YearGroup>();
+
+            foreach (var blob in blobs)
             {
-                var line = reader.ReadLine();
-
-                while ( (line = reader.ReadLine() ) != null)
-                {
-                    int year = int.Parse(line);
-
-                    yield return new YearGroup(year, null);
-                }
+                int year = int.Parse(blob);
+                if (Shard_Is_In_Between(from, to, year))
+                    shards.Add(new YearGroup(year, null));
             }
+            return shards.OrderBy(s => s.Year);
+        }
+
+        bool Shard_Is_In_Between(DateTime? from, DateTime? to, int year)
+        {
+            if (from == null && to == null)
+                return true;
+            return (from == null || from.Value.Year <= year) && (to == null || to.Value.Year >= year);
         }
 
         public Guid GetId()
@@ -54,6 +57,8 @@ namespace StreamRepository.Azure
         {
             int _year;
             IEnumerable<Tuple<DateTime, double, int>> _values;
+            public int Year { get { return _year; } }
+
 
             public YearGroup(int year, IEnumerable<Tuple<DateTime, double, int>> values)
             {
@@ -77,11 +82,11 @@ namespace StreamRepository.Azure
     [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
     public class BlobPerMonthShardingStrategy : ShardingStrategy
     {
-        CloudBlobDirectory _directory;
+        IEnumerable<IListBlobItem> _blobs;
 
-        public BlobPerMonthShardingStrategy(CloudBlobDirectory directory)
+        public BlobPerMonthShardingStrategy(IEnumerable<IListBlobItem> blobs)
         {
-            _directory = directory;
+            _blobs = blobs;
         }
 
 
@@ -92,10 +97,9 @@ namespace StreamRepository.Azure
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            var index = NamingUtilities.Get_Index_File(_directory);
-            foreach (var file in File.ReadAllLines(index).Skip(1))
+            foreach (var blob in _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(BlobFactory.Sharding)))
             {
-                var tokens = file.Split('-');
+                var tokens = blob.Split('-');
 
                 int year = int.Parse(tokens[0]);
                 int month = int.Parse(tokens[1]);

@@ -33,7 +33,8 @@ namespace StreamRepository.FileSystem
             {
                 int year = int.Parse(file);
 
-                yield return new YearGroup(year, null);
+                if (Shard_Is_In_Between(from, to, year))
+                    yield return new YearGroup(year, null);
             }
            // return _directory.GetFiles().Select(f => new
            // {
@@ -47,6 +48,12 @@ namespace StreamRepository.FileSystem
         public Guid GetId()
         {
             return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
+        }
+        bool Shard_Is_In_Between(DateTime? from, DateTime? to, int year)
+        {
+            if (from == null && to == null)
+                return true;
+            return (from == null || from.Value.Year < year) && (to == null || to.Value.Year > year);
         }
 
         public class YearGroup : ShardWithValues

@@ -32,7 +32,7 @@ namespace StreamRepository.Azure
                 var group = shard.GetValues();
                 using (var stream = new BufferPoolStream(new BufferPool()))
                 {
-                    using (var writer = new BinaryWriter(stream,Encoding.UTF8, true))
+                    using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
                         foreach (var value in group)
                             new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
 
@@ -40,7 +40,6 @@ namespace StreamRepository.Azure
 
                     var blob = OpenBlobFor(shard.GetName());
                     stream.Seek(0, SeekOrigin.Begin);
-                    //blob.Append(stream.GetBuffer(), 0, writtenBytes);
                     blob.Append(stream);
                 }
             }
@@ -66,16 +65,6 @@ namespace StreamRepository.Azure
             }
         }
 
-        IEnumerable<int> Get_Years()
-        {
-            foreach (var blob in _directory.ListBlobs())
-            {
-                var last = blob.Uri.Segments.Last();
-                int year;
-                if (Int32.TryParse(last, out year))
-                    yield return year;
-            }
-        }
 
         public override void Hint_Sampling_Period(int samplingPeriodInSeconds)
         {
@@ -88,24 +77,13 @@ namespace StreamRepository.Azure
             PageBlobState blob;
             if (!_cache.TryGetValue(name, out blob))
             {
-                blob = new PageBlobState(_directory, name);
-                Create_And_Register_Blob_On_Index_If_Necessary(blob, name);
+                blob = new PageBlobState(_directory.GetPageBlobReference(name));
+                blob.Create_if_does_not_exists();
                 blob.Open();
+
                 _cache[name] = blob;
             }
             return blob;
-        }
-
-        void Create_And_Register_Blob_On_Index_If_Necessary(PageBlobState blob, string name)
-        {
-            if (!blob.Exists())
-            {
-                blob.Create();
-
-                var index = new PageBlobState(_directory, NamingUtilities.Get_Index_File(_directory));
-                index.Open();
-                index.Append(name + Environment.NewLine);
-            }
         }
 
     }

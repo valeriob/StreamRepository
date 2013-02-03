@@ -15,7 +15,9 @@ namespace StreamRepository
             int streams = 0;
             var watch = Stopwatch.StartNew();
 
-            foreach (var stream in Get_Streams())
+            var opt = new ParallelOptions { MaxDegreeOfParallelism = 10 };
+            Parallel.ForEach(Get_Streams(), opt, stream => 
+            //foreach (var stream in Get_Streams())
             {
                 streams++;
                 var repository = Build_Repository(stream);
@@ -25,6 +27,8 @@ namespace StreamRepository
                 var speed = values / watch.Elapsed.TotalSeconds;
                 Console.WriteLine("Completed  number {1} : {2:0} total of {3} ", stream, streams, speed, values / 1000000);
             }
+            );
+
             watch.Stop();
 
             Console.WriteLine("read {0} values in {1} streams in {2}", values, streams, watch.Elapsed);
@@ -36,22 +40,22 @@ namespace StreamRepository
             {
                 MaxDegreeOfParallelism = 3
             };
-            try
-            {
-                for (int i = 0; i < streams; i++ )
-                    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
-            }
-            catch (AggregateException ex)
-            {
-                foreach (var exception in ex.InnerExceptions)
-                    Console.WriteLine(exception.Message);
-                throw;
-            }
-            //Parallel.For(0, streams, options, i =>
+            //try
             //{
-            //    Write_Stream(Guid.NewGuid() + "", years).Wait();
-            //    Console.WriteLine("Working on {0}° stream", i);
-            //});
+            //    for (int i = 0; i < streams; i++ )
+            //        Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+            //}
+            //catch (AggregateException ex)
+            //{
+            //    foreach (var exception in ex.InnerExceptions)
+            //        Console.WriteLine(exception.Message);
+            //    throw;
+            //}
+            Parallel.For(0, streams, options, async i =>
+            {
+                Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+                Console.WriteLine("Working on {0}° stream", i);
+            });
         }
 
         public void Write_Stream(string name, int years, int samplingPeriodInSeconds)

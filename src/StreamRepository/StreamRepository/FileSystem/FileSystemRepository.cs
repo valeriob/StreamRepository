@@ -26,7 +26,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+        public override async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values) )
             {
@@ -47,7 +47,7 @@ namespace StreamRepository.FileSystem
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
                         int writtenBytes = group.Count() * FramedValue.SizeInBytes();
-                        buffer.CopyTo(stream);
+                        await buffer.CopyToAsync(stream);
                         stream.Flush();
 
                         tail = tail + writtenBytes;
@@ -133,7 +133,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        void Write_Header(StreamHeader header, string name)
+        async Task Write_Header(StreamHeader header, string name)
         {
             using (var buffer = new BufferPoolStream(new BufferPool()))
             {
@@ -147,7 +147,7 @@ namespace StreamRepository.FileSystem
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
-                    buffer.CopyTo(stream);
+                    await buffer.CopyToAsync(stream);
                     stream.Flush();
                 }
             }

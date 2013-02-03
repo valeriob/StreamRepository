@@ -28,13 +28,15 @@ namespace StreamRepository.Azure
             };
         }
 
-        public AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, ShardingStrategy sharding)
+        public AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, string id)
         {
+            ShardingStrategy sharding = null;
             var blobs = directory.ListBlobs().ToList();
+            var dataBlobs = blobs.Where(s => !s.Uri.Segments.Last().StartsWith(Sharding)).ToList();
 
             if (!blobs.Any())
             {
-                var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
+                //var id = sharding.GetType().GetAttribute<System.Runtime.InteropServices.GuidAttribute>().Value;
                 var factoryBlob = directory.GetPageBlobReference(Get_Factory_Blob(directory, id));
                 factoryBlob.Create(0);
             }
@@ -42,12 +44,13 @@ namespace StreamRepository.Azure
             {
                 var factory = blobs.Select(s=> s.Uri.Segments.Last())
                     .Single(b => b.StartsWith(Sharding));
-                var dataBlobs = blobs.Where(s => !s.Uri.Segments.Last().StartsWith(Sharding)).ToList();
 
                 int spearatorIndex = factory.IndexOf('-');
-                var id = factory.Substring(spearatorIndex + 1);
+                id = factory.Substring(spearatorIndex + 1);
                 sharding = _buildStrategy(id, dataBlobs);
             }
+
+            sharding = _buildStrategy(id, dataBlobs);
 
             return new AzureBlobRepository(directory, sharding);
         }

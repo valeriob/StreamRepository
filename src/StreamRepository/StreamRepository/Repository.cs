@@ -15,7 +15,7 @@ namespace StreamRepository
         }
 
 
-        public abstract void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values);
+        public abstract Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values);
 
         public abstract IEnumerable<RecordValue> Get_Values(DateTime? from = null, DateTime? to = null);
 

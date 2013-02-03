@@ -76,17 +76,17 @@ namespace StreamRepository.Azure
             Append(buffer, 0, buffer.Length);
         }
 
-        public void Append(Stream stream)
+        public Task AppendAsync(Stream stream)
         {
-            WriteAt(_commitPosition.ToLinearAddress(), stream);
+            return WriteAtAsync(_commitPosition.ToLinearAddress(), stream);
         }
 
-        public void WriteAt(int position, byte[] buffer, int start, int count)
+        public Task WriteAt(int position, byte[] buffer, int start, int count)
         {
-            WriteAt(position, new MemoryStream(buffer, start, count));
+            return WriteAtAsync(position, new MemoryStream(buffer, start, count));
         }
 
-        public void WriteAt(int position, Stream stream)
+        public async Task WriteAtAsync(int position, Stream stream)
         {
             var count = (int)stream.Length;
             Ensure_There_Is_Space_For_More(count);
@@ -139,7 +139,7 @@ namespace StreamRepository.Azure
                     Debug.Assert(rem > 0);
 
                     if (lastFilling != null)
-                        lastFilling.Wait();
+                        await lastFilling;
                     else
                         lastPage = new Page(position + copied);
 
@@ -153,16 +153,18 @@ namespace StreamRepository.Azure
 
             Debug.Assert(position + count == currentPosition);
             Debug.Assert(copied == count);
-            Debug.Assert(_isNew && firstPageNumber  == 0);
+            if(_isNew)
+            Debug.Assert(firstPageNumber  == 0);
 
             if (_isNew)
-                _blob.UploadFromStream(bufferedPages);
+                await _blob.UploadFromStreamAsync(bufferedPages);
             else
-                _blob.WritePages(bufferedPages, firstPageNumber * PageSize);
+                await _blob.WritePagesAsync(bufferedPages, firstPageNumber * PageSize);
 
+            _isNew = false;
             if (_commitPosition.ToLinearAddress() < position + copied)
             {
-                Commit_Position(position + copied);
+                await Commit_Position(position + copied);
                 _lastPage = lastPage;
             }
         }
@@ -214,7 +216,7 @@ namespace StreamRepository.Azure
 
         public void Ensure_There_Is_Space_For_More(int lenght)
         {
-            return;
+           // return;
             int rem;
             int pages = Math.DivRem(lenght, PageSize, out rem);
             if (rem > 0)
@@ -232,10 +234,13 @@ namespace StreamRepository.Azure
                     _blob.Resize(neededSize);
                     //_blob.Resize(neededSize);
                 }
-                catch (StorageException)
+                catch (StorageException ex)
                 {
-                    _blob.FetchAttributes();
-                    _blob.Resize(neededSize);
+                    if (ex.RequestInformation.HttpStatusCode == 404)
+                        return;
+                    throw;
+                    //_blob.FetchAttributes();
+                    //_blob.Resize(neededSize);
                 }
             }
         }
@@ -247,9 +252,9 @@ namespace StreamRepository.Azure
             return new Position(length);
         }
 
-        void Commit_Position(int length)
+        async Task Commit_Position(int length)
         {
-            Commit_Length_For(_blob, length);
+            await Commit_Length_For(_blob, length);
             _commitPosition = new Position(length);
         }
 
@@ -263,10 +268,10 @@ namespace StreamRepository.Azure
             return int.Parse(_blob.Metadata[Metadata_Size]);
         }
 
-        void Commit_Length_For(CloudPageBlob blob, int length)
+        async Task Commit_Length_For(CloudPageBlob blob, int length)
         {
             blob.Metadata[Metadata_Size] = length + "";
-            blob.SetMetadata();
+            await blob.SetMetadataAsync();
         }
 
 

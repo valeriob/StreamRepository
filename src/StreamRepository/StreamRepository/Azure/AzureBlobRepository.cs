@@ -24,8 +24,8 @@ namespace StreamRepository.Azure
             _cache = new Dictionary<string, PageBlobState>();
         }
 
- 
-        public override void Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+
+        public override async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -40,7 +40,7 @@ namespace StreamRepository.Azure
 
                     var blob = OpenBlobFor(shard.GetName());
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.Append(stream);
+                    await blob.AppendAsync(stream);
                 }
             }
         }

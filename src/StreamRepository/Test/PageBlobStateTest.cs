@@ -22,7 +22,7 @@ namespace Test
 
             var helper = new PageBlobState(blob);
             //helper.Create_if_does_not_exists();
-            helper.Open();
+            helper.OpenAsync().Wait();
 
             var output = "";
             var input = @"The uniqueifier is NULL for the first instance of each customer_id, and is then populated, in ascending order, for each subsequent row with the same customer_id value. The overhead for rows with a NULL uniqueifier value is, unsurprisingly, zero bytes. This is why min_record_size_in_bytes remained unchanged in the overhead table; the first insert had a uniqueifier value of NULL. This is also why it is impossible to estimate how much additional storage overhead will result from the addition of a uniqueifier, without first having a thorough understanding of the data being stored. For example, a non-unique clustered index on a datetime column may have very little overhead if data is inserted, say, once per minute. However, if that same table is receiving thousands of inserts per minute, then it is likely that many rows will share the same datetime value, and so the uniqueifier will have a much higher overhead.

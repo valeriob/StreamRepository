@@ -146,6 +146,14 @@ namespace Microsoft.WindowsAzure.Storage
                 Tuple.Create(blob, stream));
         }
 
+        public static Task DownloadRangeToStreamAsync(this ICloudBlob blob, Stream stream, long offset, long length)
+        {
+            return Task.Factory.FromAsync(
+                (cb, state) => ((Tuple<ICloudBlob, Stream>)state).Item1.BeginDownloadRangeToStream(((Tuple<ICloudBlob, Stream>)state).Item2, offset, length, cb, state),
+                ar => ((Tuple<ICloudBlob, Stream>)ar.AsyncState).Item1.EndDownloadRangeToStream(ar),
+                Tuple.Create(blob, stream));
+        }
+        
         public static Task UploadFromStreamAsync(this ICloudBlob blob, Stream stream)
         {
             return Task.Factory.FromAsync(
@@ -194,20 +202,26 @@ namespace Microsoft.WindowsAzure.Storage
                 null);
         }
 
-        public static async Task WritePagesAsync(this CloudPageBlob blob, Stream pageData, int startOffset)
+        public static Task WritePagesAsync(this CloudPageBlob blob, Stream pageData, int startOffset)
         {
-            var task = Task.Factory.FromAsync(
+            return Task.Factory.FromAsync(
                 (cb, state) => blob.BeginWritePages(pageData, startOffset, null, cb, state),
                 ar => blob.EndWritePages(ar),
                 null);
-
-            await task;
+        }
+        public static Task ResizeAsync(this CloudPageBlob blob, long size)
+        {
+            return Task.Factory.FromAsync(
+                (cb, state) => blob.BeginResize(size,  null, null, null, cb, state),
+                ar => blob.EndResize(ar),
+                null);
         }
 
-        public static async Task WritePagesAsync(this CloudPageBlob blob, byte[] pageData, int start, int count, int startOffset)
+
+        public static Task WritePagesAsync(this CloudPageBlob blob, byte[] pageData, int start, int count, int startOffset)
         {
             MemoryStream stream = null;
-            var task = Task.Factory.FromAsync(
+            return Task.Factory.FromAsync(
                 (cb, state) => 
                 {
                     stream = new MemoryStream(pageData, start, count);
@@ -220,8 +234,6 @@ namespace Microsoft.WindowsAzure.Storage
                     stream.Dispose();
                 },
                 null);
-
-            await task;
         }
     }
 

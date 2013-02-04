@@ -40,22 +40,22 @@ namespace StreamRepository
             {
                 MaxDegreeOfParallelism = 3
             };
-            //try
-            //{
-            //    for (int i = 0; i < streams; i++ )
-            //        Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
-            //}
-            //catch (AggregateException ex)
-            //{
-            //    foreach (var exception in ex.InnerExceptions)
-            //        Console.WriteLine(exception.Message);
-            //    throw;
-            //}
-            Parallel.For(0, streams, options, async i =>
+            try
             {
-                Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
-                Console.WriteLine("Working on {0}° stream", i);
-            });
+                for (int i = 0; i < streams; i++)
+                    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+            }
+            catch (AggregateException ex)
+            {
+                foreach (var exception in ex.InnerExceptions)
+                    Console.WriteLine(exception.Message);
+                throw;
+            }
+            //Parallel.For(0, streams, options, i =>
+            //{
+            //    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+            //    Console.WriteLine("Working on {0}° stream", i);
+            //});
         }
 
         public void Write_Stream(string name, int years, int samplingPeriodInSeconds)

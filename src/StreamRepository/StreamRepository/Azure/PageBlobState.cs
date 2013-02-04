@@ -25,12 +25,11 @@ namespace StreamRepository.Azure
             _blob = blob;
         }
 
-
-        public void Open()
+        public async Task OpenAsync()
         {
             try
             {
-                _blob.FetchAttributes();
+                await _blob.FetchAttributesAsync();
                 _commitPosition = Get_Committed_Position();
             }
             catch (StorageException ex)
@@ -47,7 +46,7 @@ namespace StreamRepository.Azure
                 using (var stream = _blob.OpenRead())
                 {
                     stream.Seek(_commitPosition.Page * PageSize, SeekOrigin.Begin);
-                    stream.Read(lastPage, 0, 512);
+                    await stream.ReadAsync(lastPage, 0, 512);
                 }
             }
 
@@ -79,15 +78,20 @@ namespace StreamRepository.Azure
         public async Task WriteAtAsync(int position, Stream stream)
         {
             await Ensure_There_Is_Space_For_More((int)stream.Length);
+
             var prepare = await PreparePages(position, stream);
-            await UploadPages(prepare.Position, prepare.Pages);
+
+            if (prepare.Position == 0)
+                await _blob.UploadFromStreamAsync(prepare.Pages);
+            else
+                await _blob.WritePagesAsync(prepare.Pages, prepare.Position);
+
             await CommitNewLength_if_it_grew(prepare.NewLength(), prepare.LastPage);
         }
 
         async Task<PreparedPages> PreparePages(int position, Stream stream)
         {
-            var count = (int)stream.Length;
-
+            int count = (int)stream.Length;
             int copied = 0;
             int currentPosition = position;
             int firstPageNumber = position / PageSize;
@@ -150,7 +154,6 @@ namespace StreamRepository.Azure
 
             Debug.Assert(position + count == currentPosition);
             Debug.Assert(copied == count);
-            //Debug.Assert(firstPageNumber  == 0);
 
             return new PreparedPages
             {
@@ -158,14 +161,6 @@ namespace StreamRepository.Azure
                 Pages = bufferedPages,
                 LastPage = lastPage
             };
-        }
-
-        async Task UploadPages(int position, Stream stream)
-        {
-          //if (_isNewOrEmpty)
-          //    await _blob.UploadFromStreamAsync(stream);
-          //  else
-              await _blob.WritePagesAsync(stream, position);
         }
 
         async Task CommitNewLength_if_it_grew(long newLength, Page lastPage)
@@ -195,6 +190,16 @@ namespace StreamRepository.Azure
                 while (stream.Position < _commitPosition.ToLinearAddress())
                     yield return FramedValue.Deserialize(stream, stream.Position);
             }
+        }
+
+        public async Task<Stream> DownloadValuesAsync()
+        {
+            var stream = new BufferPoolStream(new BufferPool());
+
+            await _blob.DownloadRangeToStreamAsync(stream, 0, _commitPosition.ToLinearAddress());
+            
+            stream.Seek(0, SeekOrigin.Begin);
+            return stream;
         }
 
         public IEnumerable<byte[]> Read_Raw_Values()
@@ -227,12 +232,12 @@ namespace StreamRepository.Azure
             }
         }
 
-        public void Ensure_There_Is_Space_For(int lenght)
+        public async Task Ensure_There_Is_Space_For(int lenght)
         {
             if (_blob.Properties.Length != 0)
                 throw new Exception("Already initialize");
                 
-            _blob.Resize(lenght);
+            await _blob.ResizeAsync(lenght);
         }
 
         public async Task Ensure_There_Is_Space_For_More(int lenght)
@@ -251,7 +256,7 @@ namespace StreamRepository.Azure
                 {
                     //var min = Math.Min(neededSize, 1024 * 1024);
                     //var value = Math.Max(min, 1024 * 1024);
-                    _blob.Resize(neededSize);
+                    await _blob.ResizeAsync(neededSize);
                     //_blob.Resize(neededSize);
                 }
                 catch (StorageException ex)
@@ -304,6 +309,7 @@ namespace StreamRepository.Azure
                 return page;
             }
         }
+
     }
 
 

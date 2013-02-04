@@ -38,9 +38,9 @@ namespace StreamRepository.Azure
 
                     int writtenBytes = group.Count() * FramedValue.SizeInBytes();
 
-                    var blob = OpenBlobFor(shard.GetName());
+                    var blob = OpenBlobAsync(shard.GetName());
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.AppendAsync(stream);
+                    await blob.Result.AppendAsync(stream);
                 }
             }
         }
@@ -49,8 +49,8 @@ namespace StreamRepository.Azure
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobFor(shard.GetName());
-                foreach (var value in blob.Read_Values())
+                var blob = OpenBlobAsync(shard.GetName());
+                foreach (var value in blob.Result.Read_Values())
                     yield return value;
             }
         }
@@ -59,8 +59,8 @@ namespace StreamRepository.Azure
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobFor(shard.GetName());
-                foreach (var value in blob.Read_Raw_Values())
+                var blob = OpenBlobAsync(shard.GetName());
+                foreach (var value in blob.Result.Read_Raw_Values())
                     yield return value;
             }
         }
@@ -72,14 +72,14 @@ namespace StreamRepository.Azure
            // OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
         }
 
-        PageBlobState OpenBlobFor(string name)
+        async Task<PageBlobState> OpenBlobAsync(string name)
         {
             PageBlobState blob;
             if (!_cache.TryGetValue(name, out blob))
             {
                 blob = new PageBlobState(_directory.GetPageBlobReference(name));
                 //blob.Create_if_does_not_exists();
-                blob.Open();
+               await  blob.OpenAsync();
 
                 _cache[name] = blob;
             }

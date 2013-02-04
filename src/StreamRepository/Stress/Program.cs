@@ -42,7 +42,7 @@ namespace Stress
             var blobClient = azureAccount.CreateCloudBlobClient();
             var container = blobClient.GetContainerReference("onenergy-amadori");
             container.CreateIfNotExists();
-            Account account = new BlobAccount(container, new BlobFactory());
+            Account account = new AzureBlobAccount(container, new AzureBlobFactory());
 
             //var indexTable = tableClient.GetTableReference("index");
             //var operation = TableOperation.InsertOrReplace(null);

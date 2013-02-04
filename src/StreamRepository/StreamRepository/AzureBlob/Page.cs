@@ -10,49 +10,24 @@ namespace StreamRepository.Azure
 {
     public class Page
     {
-        //public Position Position { get; private set; }
         int _index;
         int _offset;
         byte[] _data;
 
         public Page(Position position, byte[] data)
         {
-            if (data == null || data.Length != PageBlobState.PageSize)
+            if (data == null || data.Length != AzurePageBlob.PageSize)
                 throw new Exception("page data must be 512 in size");
 
-            //Position = position;
             _index = position.Page;
             _offset = position.Offset;
             _data = data;
         }
-        
-        //public Page(Position position)
-        //    : this(position, new byte[PageBlobState.PageSize])
-        //{
-        //}
 
-        //public Page(int page, int offset, byte[] data)
-        //    : this(new Position(page, offset), data)
-        //{
-        //}
-
-        //public Page(int position, byte[] data)
-        //    : this(new Position(position), data)
-        //{
-        //}
         public Page(int position)
-            : this(new Position(position), new byte[PageBlobState.PageSize])
+            : this(new Position(position), new byte[AzurePageBlob.PageSize])
         {
         }
-
-
-        //public static Page Create_From_Buffer(byte[] buffer, int start, int count, int position)
-        //{
-        //    byte[] data = new byte[PageBlobState.PageSize];
-        //    Array.Copy(buffer, start, data, 0, count);
-
-        //    return new Page(position, data);
-        //}
 
 
         public Stream ToStream()
@@ -71,7 +46,7 @@ namespace StreamRepository.Azure
             using (var stream = blob.OpenRead())
             {
                 stream.Seek(this.GetBaseAddress(), SeekOrigin.Begin);
-                stream.Read(_data, 0, PageBlobState.PageSize);
+                stream.Read(_data, 0, AzurePageBlob.PageSize);
             }
         }
         public async Task FillFromBlobAsync(CloudPageBlob blob)
@@ -79,13 +54,13 @@ namespace StreamRepository.Azure
             using (var stream = blob.OpenRead())
             {
                 stream.Seek(this.GetBaseAddress(), SeekOrigin.Begin);
-                await stream.ReadAsync(_data, 0, PageBlobState.PageSize);
+                await stream.ReadAsync(_data, 0, AzurePageBlob.PageSize);
             }
         }
 
         public int Free_Space()
         {
-            return PageBlobState.PageSize - _offset;
+            return AzurePageBlob.PageSize - _offset;
         }
         public bool IsEmpty()
         {
@@ -94,12 +69,12 @@ namespace StreamRepository.Azure
 
         public bool IsFull()
         {
-            return _offset == PageBlobState.PageSize;
+            return _offset == AzurePageBlob.PageSize;
         }
 
         public bool Is_empty_and_can_contain_all_data___or___Is_not_empty(int count)
         {
-            return (IsEmpty() && count < PageBlobState.PageSize) || Free_Space() < PageBlobState.PageSize;
+            return (IsEmpty() && count < AzurePageBlob.PageSize) || Free_Space() < AzurePageBlob.PageSize;
         }
 
 
@@ -110,7 +85,7 @@ namespace StreamRepository.Azure
             if (count < 0)
                 throw new ArgumentOutOfRangeException("count");
 
-            int toCopy = Math.Min(PageBlobState.PageSize, count);
+            int toCopy = Math.Min(AzurePageBlob.PageSize, count);
 
             Array.Copy(buffer, start, _data, 0, toCopy);
 
@@ -125,7 +100,7 @@ namespace StreamRepository.Azure
                 throw new ArgumentNullException("stream");
 
 
-            int toCopy = (int)Math.Min(PageBlobState.PageSize, stream.Length - stream.Position);
+            int toCopy = (int)Math.Min(AzurePageBlob.PageSize, stream.Length - stream.Position);
 
             stream.Read(_data, 0, toCopy);
 
@@ -168,7 +143,7 @@ namespace StreamRepository.Azure
 
         public int GetBaseAddress()
         {
-            return _index * PageBlobState.PageSize;
+            return _index * AzurePageBlob.PageSize;
         }
 
         public override string ToString()

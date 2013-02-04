@@ -63,12 +63,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account.cs" />
-    <Compile Include="Azure\BlobAccount.cs" />
-    <Compile Include="Azure\BlobShardingStrategy.cs" />
-    <Compile Include="Azure\BlobFactory.cs" />
-    <Compile Include="Azure\FileSystemCache.cs" />
-    <Compile Include="Azure\Page.cs" />
-    <Compile Include="Azure\Position.cs" />
+    <Compile Include="AzureBlob\AzureBlobAccount.cs" />
+    <Compile Include="AzureBlob\AzureBlobShardingStrategy.cs" />
+    <Compile Include="AzureBlob\AzureBlobFactory.cs" />
+    <Compile Include="AzureBlob\Cache.cs" />
+    <Compile Include="AzureBlob\Page.cs" />
+    <Compile Include="AzureBlob\Position.cs" />
+    <Compile Include="CanReadValues.cs" />
     <Compile Include="EventStore.BufferManagement\BufferManager.cs" />
     <Compile Include="EventStore.BufferManagement\BufferPool.cs" />
     <Compile Include="EventStore.BufferManagement\BufferPoolStream.cs" />
@@ -77,21 +78,20 @@
     <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
     <Compile Include="Extensions\System.cs" />
     <Compile Include="FileSystem\FileSystemFactory.cs" />
-    <Compile Include="FileSystem\FileShardingStrategy.cs" />
+    <Compile Include="FileSystem\FileSystemShardingStrategy.cs" />
     <Compile Include="FileSystem\FileStream.cs" />
     <Compile Include="FileSystem\FileSystemAccount.cs" />
-    <Compile Include="Azure\AzureBlobRepository.cs" />
-    <Compile Include="Azure\PageBlobState.cs" />
+    <Compile Include="AzureBlob\AzureBlobRepository.cs" />
+    <Compile Include="AzureBlob\PageBlobState.cs" />
     <Compile Include="FileSystem\FileSystemRepository.cs" />
     <Compile Include="FramedValue.cs" />
-    <Compile Include="Naming.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordValue.cs" />
     <Compile Include="Repository.cs" />
     <Compile Include="ShardingStrategy.cs" />
-    <Compile Include="StreamHeader.cs" />
-    <Compile Include="StreamJoiner.cs" />
-    <Compile Include="StreamSegment.cs" />
+    <Compile Include="FileSystem\StreamHeader.cs" />
+    <Compile Include="Common\StreamJoiner.cs" />
+    <Compile Include="Common\StreamSegment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

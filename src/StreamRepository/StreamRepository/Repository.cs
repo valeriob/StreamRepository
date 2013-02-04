@@ -7,36 +7,17 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public abstract class Repository
+    public interface Repository
     {
-        public void Append_Value(DateTime timestamp, double value, int importId)
-        {
-            Append_Values(new[] { new Tuple<DateTime, double, int>(timestamp, value, importId) });
-        }
+        Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values);
 
+        IEnumerable<RecordValue> Get_Values(DateTime? from = null, DateTime? to = null);
 
-        public abstract Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values);
+        IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null);
 
-        public abstract IEnumerable<RecordValue> Get_Values(DateTime? from = null, DateTime? to = null);
+        void Hint_Sampling_Period(int samplingPeriodInSeconds);
 
-        public abstract IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null);
-
-        public abstract void Hint_Sampling_Period(int samplingPeriodInSeconds);
-
-
-        public void Mark_Value_As_Obsolete(RecordValue value)
-        {
-            //var file = get value.Timestamp.Year
-            // TODO fetch file
-            using (var file = File.OpenWrite(""))
-            {
-                var obso = new FramedObsoleted(value.Position, true);
-                var writer = new BinaryWriter(file);
-
-                obso.Serialize(writer);
-            }
-        }
-
+        //void Mark_Value_As_Obsolete(RecordValue value);
     }
 
  

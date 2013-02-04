@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
+    // startint position to be implemented
     public class StreamSegment : Stream
     {
         int _length;
@@ -61,6 +62,7 @@ namespace StreamRepository
         public override int Read(byte[] buffer, int offset, int count)
         {
             int limited = (int)Math.Min(count, _length - _innerStream.Position);
+            _innerStream.Seek(_start, SeekOrigin.Begin);
             int read = _innerStream.Read(buffer, offset, limited);
             return read;
         }

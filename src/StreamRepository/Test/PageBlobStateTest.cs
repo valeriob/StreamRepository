@@ -20,7 +20,7 @@ namespace Test
 
             var blob = container.GetPageBlobReference(Guid.NewGuid()+"");
 
-            var helper = new PageBlobState(blob);
+            var helper = new AzurePageBlob(blob);
             //helper.Create_if_does_not_exists();
             helper.OpenAsync().Wait();
 

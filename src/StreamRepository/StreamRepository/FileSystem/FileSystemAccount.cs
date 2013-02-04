@@ -27,9 +27,8 @@ namespace StreamRepository.FileSystem
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
             if (!directory.Exists)
                 directory.Create();
-            var defaultSharding = new FilePerYearShardingStrategy(directory.GetFiles());
 
-            return _factory.OperOrCreate(directory, defaultSharding);
+            return _factory.OperOrCreate(directory, "9C2880C1-16D7-4D90-8D37-CC3D7231EAB0");
         }
 
         public override void Reset()

@@ -26,7 +26,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public override async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+        public async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values) )
             {
@@ -61,7 +61,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        public override void Hint_Sampling_Period(int samplingPeriodInSeconds)
+        public void Hint_Sampling_Period(int samplingPeriodInSeconds)
         {
             // TODO
             //using (var file = Get_Year_With_Caching(year).OpenWrite())
@@ -71,7 +71,7 @@ namespace StreamRepository.FileSystem
             //}
         }
 
-        public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
+        public IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
@@ -91,7 +91,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        public override IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
+        public IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
@@ -186,9 +186,6 @@ namespace StreamRepository.FileSystem
                 using (var writer = new BinaryWriter(stream))
                     header.Serialize(writer);
             }
-
-            //File.AppendAllLines(NamingUtilities.Get_Index_File(_directory), new[] { name });
-
             return new FileInfo(path);
         }
 

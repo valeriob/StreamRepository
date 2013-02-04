@@ -30,13 +30,13 @@ namespace StreamRepository.Azure
 
         public Position(long length)
         {
-            _page = Math.DivRem((int)length, PageBlobState.PageSize, out _offset);
+            _page = Math.DivRem((int)length, AzurePageBlob.PageSize, out _offset);
         }
 
 
         public int ToLinearAddress()
         {
-            return Page * PageBlobState.PageSize + Offset;
+            return Page * AzurePageBlob.PageSize + Offset;
         }
 
         //public int ToPageAddress()

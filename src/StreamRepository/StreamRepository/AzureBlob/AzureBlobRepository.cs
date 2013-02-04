@@ -13,19 +13,20 @@ namespace StreamRepository.Azure
     {
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
-        Dictionary<string, PageBlobState> _cache;
+        Dictionary<string, AzurePageBlob> _blobsCache;
         ShardingStrategy _sharding;
-
+        //Cache _cache;
 
         public AzureBlobRepository(CloudBlobDirectory directory, ShardingStrategy sharding)
         {
             _directory = directory;
             _sharding = sharding;
-            _cache = new Dictionary<string, PageBlobState>();
+            _blobsCache = new Dictionary<string, AzurePageBlob>();
+            //_cache = new FileSystemCache(new DirectoryInfo(""));
         }
 
 
-        public override async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+        public async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -45,43 +46,48 @@ namespace StreamRepository.Azure
             }
         }
 
-        public override IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
+        public IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobAsync(shard.GetName());
-                foreach (var value in blob.Result.Read_Values())
+                var name = shard.GetName();
+
+                var task = OpenBlobAsync(name);
+                task.Wait();
+
+                foreach (var value in task.Result.Read_Values())
                     yield return value;
             }
         }
 
-        public override  IEnumerable<byte[]> Get_Raw_Values(DateTime? from, DateTime? to)
+        public IEnumerable<byte[]> Get_Raw_Values(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(from, to))
             {
-                var blob = OpenBlobAsync(shard.GetName());
-                foreach (var value in blob.Result.Read_Raw_Values())
+                var task = OpenBlobAsync(shard.GetName());
+                task.Wait();
+                foreach (var value in task.Result.Read_Raw_Values())
                     yield return value;
             }
         }
 
 
-        public override void Hint_Sampling_Period(int samplingPeriodInSeconds)
+        public void Hint_Sampling_Period(int samplingPeriodInSeconds)
         {
             // TODO
            // OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
         }
 
-        async Task<PageBlobState> OpenBlobAsync(string name)
+        async Task<AzurePageBlob> OpenBlobAsync(string name)
         {
-            PageBlobState blob;
-            if (!_cache.TryGetValue(name, out blob))
+            AzurePageBlob blob;
+            if (!_blobsCache.TryGetValue(name, out blob))
             {
-                blob = new PageBlobState(_directory.GetPageBlobReference(name));
-                //blob.Create_if_does_not_exists();
-               await  blob.OpenAsync();
+                blob = new AzurePageBlob(_directory.GetPageBlobReference(name));
+                
+                await  blob.OpenAsync();
 
-                _cache[name] = blob;
+                _blobsCache[name] = blob;
             }
             return blob;
         }

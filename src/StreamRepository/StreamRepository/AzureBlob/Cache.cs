@@ -9,9 +9,11 @@ namespace StreamRepository.Azure
 {
     public interface Cache
     {
-        bool IsCached(string name);
+        bool Contains(string name);
         Stream Get(string name);
-        void Set(Stream stream, string name);
+        CanReadValues GetReader(string name);
+        void Put(Stream stream, string name);
+        void Invalidate(string name);
     }
 
     public class FileSystemCache : Cache
@@ -23,7 +25,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public bool IsCached(string name)
+        public bool Contains(string name)
         {
             return _directory.EnumerateFiles("name").Any();
         }
@@ -34,11 +36,24 @@ namespace StreamRepository.Azure
             return File.OpenRead(path);
         }
 
-        public void Set(Stream stream, string name)
+        public void Put(Stream stream, string name)
         {
             var path = Path.Combine(_directory.FullName, name);
             using (var dest = File.Open(path, FileMode.OpenOrCreate))
                 stream.CopyTo(dest);
+        }
+
+
+        public void Invalidate(string name)
+        {
+            var path = Path.Combine(_directory.FullName, name);
+            File.Delete(path);
+        }
+
+
+        public CanReadValues GetReader(string name)
+        {
+            throw new NotImplementedException();
         }
     }
 }

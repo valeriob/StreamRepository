@@ -9,12 +9,12 @@ using EventStore.BufferManagement;
 
 namespace StreamRepository.Azure
 {
-    public class BlobAccount : Account
+    public class AzureBlobAccount : Account
     {
         CloudBlobContainer _container;
-        BlobFactory _factory;
+        AzureBlobFactory _factory;
 
-        public BlobAccount(CloudBlobContainer container, BlobFactory factory)
+        public AzureBlobAccount(CloudBlobContainer container, AzureBlobFactory factory)
         {
             _container = container;
             _factory = factory;

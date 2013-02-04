@@ -12,21 +12,14 @@ namespace StreamRepository
     {
         long _length;
         long _position;
+        List<StreamChunk> _chunks;
 
-        List<Stream> _chain = new List<Stream>();
-        List<int> _starts = new List<int>();
-        List<int> _counts = new List<int>();
-        //public StreamJoiner(params Stream[] chain)
-        //{
-        //    if (chain == null)
-        //        throw new ArgumentNullException("chain");
 
-        //    _chain = chain.ToList();
-        //    _length = chain.Sum(l => l.Length);
+        public StreamJoiner()
+        {
+            _chunks = new List<StreamChunk>();
+        }
 
-        //    foreach (var stream in chain)
-        //        stream.Seek(0, SeekOrigin.Begin);
-        //}
 
         public void Append(Stream stream, int start = 0, int? count = null)
         {
@@ -35,17 +28,12 @@ namespace StreamRepository
             if (!stream.CanSeek && start != 0)
                 throw new ArgumentException();
 
-            _chain.Add(stream);
-            _starts.Add(start);
-            if (count != null)
-                _counts.Add(count.Value);
-            else
-                _counts.Add((int)stream.Length);
+            if (count == null)
+                count = (int)stream.Length;
 
+            _chunks.Add(new StreamChunk(stream, start, count.Value));
 
-            
-            //_length = _chain.Sum(l => l.Length);
-            _length = _counts.Sum();
+            _length = _chunks.Sum(c => c.Count);
         }
 
         public override bool CanRead
@@ -103,13 +91,14 @@ namespace StreamRepository
             do
             {
                 var p = GetPosition(_position + read);
-                var current = _chain[p.Index];
-                long localLeft = _counts[p.Index] - p.Offset;
+                var chunk = _chunks[p.Index];
+                var stream = chunk.Stream;
+                long localLeft = chunk.Count - p.Offset;
 
-                current.Seek(_starts[p.Index] + p.Offset, SeekOrigin.Begin);
+                stream.Seek(chunk.Start + p.Offset, SeekOrigin.Begin);
               
                 int toRead = Min(left, localLeft, buffer.Length);
-                int test = current.Read(buffer, offset + read, toRead);
+                int test = stream.Read(buffer, offset + read, toRead);
                 Debug.Assert(test == toRead);
 
                 read += toRead;
@@ -140,20 +129,22 @@ namespace StreamRepository
             int index = 0;
             int tmp = 0;
             int consumed = 0;
-            for (int i = 0; i < _chain.Count && tmp <= length; i++)
+
+            for (int i = 0; i < _chunks.Count && tmp <= length; i++)
             {
-                tmp += _counts[i];
+                tmp += _chunks[i].Count;
                 if (i > 0)
-                    consumed += _counts[i - 1];
+                    consumed += _chunks[i - 1].Count;
                 index = i;
             }
+
             int offset = (int)length - consumed;
             return new Position(index, offset);
         }
 
     }
 
-    public struct Position
+    struct Position
     {
         public readonly int Index;
         public readonly int Offset;
@@ -163,5 +154,21 @@ namespace StreamRepository
             Index = index;
             Offset = offset;
         }
+    }
+
+    class StreamChunk
+    {
+        public Stream Stream { get; private set; }
+        public int Start { get; private set; }
+        public int Count { get; private set; }
+
+
+        public StreamChunk(Stream stream, int start, int count)
+        {
+            Stream = stream;
+            Start = start;
+            Count = count;
+        }
+
     }
 }

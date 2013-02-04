@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -7,17 +8,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StreamRepository.FileSystem
+namespace StreamRepository.Azure
 {
     [Export(typeof(ShardingStrategy))]
-    [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
-    public class FilePerYearShardingStrategy : ShardingStrategy
+    [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
+    public class AzureBlobPerYearShardingStrategy : ShardingStrategy
     {
-        IEnumerable<FileInfo> _files;
+        IEnumerable<IListBlobItem> _blobs;
 
-        public FilePerYearShardingStrategy(IEnumerable<FileInfo> files)
+        public AzureBlobPerYearShardingStrategy(IEnumerable<IListBlobItem> blobs)
         {
-            _files = files;
+            _blobs = blobs;
         }
 
 
@@ -28,37 +29,36 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            foreach (var file in _files)
-            {
-                int year = int.Parse(file.Name);
+            var blobs = _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)).ToList();
+            var shards = new List<YearGroup>();
 
+            foreach (var blob in blobs)
+            {
+                int year = int.Parse(blob);
                 if (Shard_Is_In_Between(from, to, year))
-                    yield return new YearGroup(year, null);
+                    shards.Add(new YearGroup(year, null));
             }
-           // return _directory.GetFiles().Select(f => new
-           // {
-           //     f,
-           //     f.Name,
-           //     Year = Convert.ToInt32(Path.GetFileNameWithoutExtension(f.FullName))
-           // }).OrderBy(d => d.Year)
-           //.Select(s => new YearGroup(s.Year, Enumerable.Empty<Tuple<DateTime, double, int>>()));
+            return shards.OrderBy(s => s.Year);
+        }
+
+        bool Shard_Is_In_Between(DateTime? from, DateTime? to, int year)
+        {
+            if (from == null && to == null)
+                return true;
+            return (from == null || from.Value.Year <= year) && (to == null || to.Value.Year >= year);
         }
 
         public Guid GetId()
         {
             return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
         }
-        bool Shard_Is_In_Between(DateTime? from, DateTime? to, int year)
-        {
-            if (from == null && to == null)
-                return true;
-            return (from == null || from.Value.Year < year) && (to == null || to.Value.Year > year);
-        }
 
         public class YearGroup : ShardWithValues
         {
             int _year;
             IEnumerable<Tuple<DateTime, double, int>> _values;
+            public int Year { get { return _year; } }
+
 
             public YearGroup(int year, IEnumerable<Tuple<DateTime, double, int>> values)
             {
@@ -79,14 +79,14 @@ namespace StreamRepository.FileSystem
     }
 
     [Export(typeof(ShardingStrategy))]
-    [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
-    public class FilePerMonthShardingStrategy : ShardingStrategy
+    [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
+    public class AzureBlobPerMonthShardingStrategy : ShardingStrategy
     {
-        IEnumerable<FileInfo> _files;
+        IEnumerable<IListBlobItem> _blobs;
 
-        public FilePerMonthShardingStrategy(IEnumerable<FileInfo> files)
+        public AzureBlobPerMonthShardingStrategy(IEnumerable<IListBlobItem> blobs)
         {
-            _files = files;
+            _blobs = blobs;
         }
 
 
@@ -97,9 +97,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
-            foreach (var file in _files)
+            foreach (var blob in _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)))
             {
-                var tokens = file.Name.Split('-');
+                var tokens = blob.Split('-');
 
                 int year = int.Parse(tokens[0]);
                 int month = int.Parse(tokens[1]);

@@ -66,6 +66,7 @@
     <Compile Include="Azure\BlobAccount.cs" />
     <Compile Include="Azure\BlobShardingStrategy.cs" />
     <Compile Include="Azure\BlobFactory.cs" />
+    <Compile Include="Azure\FileSystemCache.cs" />
     <Compile Include="Azure\Page.cs" />
     <Compile Include="Azure\Position.cs" />
     <Compile Include="EventStore.BufferManagement\BufferManager.cs" />

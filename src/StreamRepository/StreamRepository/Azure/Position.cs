@@ -28,9 +28,9 @@ namespace StreamRepository.Azure
             _offset = offset;
         }
 
-        public Position(int length)
+        public Position(long length)
         {
-            _page = Math.DivRem(length, PageBlobState.PageSize, out _offset);
+            _page = Math.DivRem((int)length, PageBlobState.PageSize, out _offset);
         }
 
 

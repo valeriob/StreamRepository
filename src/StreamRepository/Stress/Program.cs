@@ -66,7 +66,7 @@ namespace Stress
 
             watch = Stopwatch.StartNew();
             account.Reset();
-            account.Write_Streams(10, 1, OgniQuartoDiOra);
+            account.Write_Streams(1, 1, OgniQuartoDiOra);
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 

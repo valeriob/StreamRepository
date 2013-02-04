@@ -16,7 +16,6 @@ namespace StreamRepository.Azure
         public static readonly string Metadata_Size = "Size";
         public static readonly Int16 PageSize = 512;
         CloudPageBlob _blob;
-        bool _isNew;
         Position _commitPosition = Position.Start;
         Page _lastPage;
 
@@ -32,15 +31,15 @@ namespace StreamRepository.Azure
             try
             {
                 _blob.FetchAttributes();
+                _commitPosition = Get_Committed_Position();
             }
             catch (StorageException ex)
             {
                 if (ex.RequestInformation.HttpStatusCode != 404)
                     throw;
-                _isNew = true;
-            }
 
-            _commitPosition = Get_Committed_Position();
+                _commitPosition = Position.Start;
+            }
 
             byte[] lastPage = new byte[PageSize];
             if (_commitPosition.ToLinearAddress() != 0)
@@ -53,15 +52,6 @@ namespace StreamRepository.Azure
             }
 
             _lastPage = new Page(_commitPosition, lastPage);
-        }
-
-        public void Create_if_does_not_exists()
-        {
-            if (_blob.Exists())
-                return;
-            _blob.Create(PageSize * 128);
-            _blob.Metadata[Metadata_Size] = "0";
-            //_blob.SetMetadata();
         }
 
 
@@ -88,8 +78,15 @@ namespace StreamRepository.Azure
 
         public async Task WriteAtAsync(int position, Stream stream)
         {
+            await Ensure_There_Is_Space_For_More((int)stream.Length);
+            var prepare = await PreparePages(position, stream);
+            await UploadPages(prepare.Position, prepare.Pages);
+            await CommitNewLength_if_it_grew(prepare.NewLength(), prepare.LastPage);
+        }
+
+        async Task<PreparedPages> PreparePages(int position, Stream stream)
+        {
             var count = (int)stream.Length;
-            Ensure_There_Is_Space_For_More(count);
 
             int copied = 0;
             int currentPosition = position;
@@ -153,18 +150,29 @@ namespace StreamRepository.Azure
 
             Debug.Assert(position + count == currentPosition);
             Debug.Assert(copied == count);
-            if(_isNew)
-            Debug.Assert(firstPageNumber  == 0);
+            //Debug.Assert(firstPageNumber  == 0);
 
-            if (_isNew)
-                await _blob.UploadFromStreamAsync(bufferedPages);
-            else
-                await _blob.WritePagesAsync(bufferedPages, firstPageNumber * PageSize);
-
-            _isNew = false;
-            if (_commitPosition.ToLinearAddress() < position + copied)
+            return new PreparedPages
             {
-                await Commit_Position(position + copied);
+                Position = position,
+                Pages = bufferedPages,
+                LastPage = lastPage
+            };
+        }
+
+        async Task UploadPages(int position, Stream stream)
+        {
+          //if (_isNewOrEmpty)
+          //    await _blob.UploadFromStreamAsync(stream);
+          //  else
+              await _blob.WritePagesAsync(stream, position);
+        }
+
+        async Task CommitNewLength_if_it_grew(long newLength, Page lastPage)
+        {
+            if (_commitPosition.ToLinearAddress() < newLength)
+            {
+                await Commit_Position(newLength);
                 _lastPage = lastPage;
             }
         }
@@ -206,6 +214,19 @@ namespace StreamRepository.Azure
             }
         }
 
+        public IEnumerable<BufferedRecord> Read_Raw_Values2()
+        {
+            var pool = new BufferPool();
+            using (var stream = new BufferPoolStream(pool))
+            {
+                _blob.DownloadRangeToStream(stream, 0, _commitPosition.ToLinearAddress());
+                stream.Seek(0, SeekOrigin.Begin);
+                
+                while (stream.Position < _commitPosition.ToLinearAddress())
+                    yield return new BufferedRecord(pool, stream.Position);
+            }
+        }
+
         public void Ensure_There_Is_Space_For(int lenght)
         {
             if (_blob.Properties.Length != 0)
@@ -214,9 +235,8 @@ namespace StreamRepository.Azure
             _blob.Resize(lenght);
         }
 
-        public void Ensure_There_Is_Space_For_More(int lenght)
+        public async Task Ensure_There_Is_Space_For_More(int lenght)
         {
-           // return;
             int rem;
             int pages = Math.DivRem(lenght, PageSize, out rem);
             if (rem > 0)
@@ -239,8 +259,6 @@ namespace StreamRepository.Azure
                     if (ex.RequestInformation.HttpStatusCode == 404)
                         return;
                     throw;
-                    //_blob.FetchAttributes();
-                    //_blob.Resize(neededSize);
                 }
             }
         }
@@ -252,7 +270,7 @@ namespace StreamRepository.Azure
             return new Position(length);
         }
 
-        async Task Commit_Position(int length)
+        async Task Commit_Position(long length)
         {
             await Commit_Length_For(_blob, length);
             _commitPosition = new Position(length);
@@ -268,7 +286,7 @@ namespace StreamRepository.Azure
             return int.Parse(_blob.Metadata[Metadata_Size]);
         }
 
-        async Task Commit_Length_For(CloudPageBlob blob, int length)
+        async Task Commit_Length_For(CloudPageBlob blob, long length)
         {
             blob.Metadata[Metadata_Size] = length + "";
             await blob.SetMetadataAsync();
@@ -288,4 +306,36 @@ namespace StreamRepository.Azure
         }
     }
 
+
+    public class BufferedRecord
+    {
+        BufferPool _pool;
+        long _position;
+
+        public BufferedRecord(BufferPool pool, long position)
+        {
+            _pool = pool;
+            _position = position;
+
+            new BufferPoolStream(_pool);
+        }
+
+        //public void WriteTo(Stream stream)
+        //{ 
+        //    _pool.ReadFrom(_pool,
+
+        //}
+    }
+
+    public class PreparedPages
+    {
+        public int Position { get; set; }
+        public StreamJoiner Pages { get; set; }
+        public Page LastPage { get; set; }
+
+        public long NewLength()
+        {
+            return Position + Pages.Length;
+        }
+    }
 }

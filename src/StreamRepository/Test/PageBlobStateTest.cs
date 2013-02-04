@@ -21,7 +21,7 @@ namespace Test
             var blob = container.GetPageBlobReference(Guid.NewGuid()+"");
 
             var helper = new PageBlobState(blob);
-            helper.Create_if_does_not_exists();
+            //helper.Create_if_does_not_exists();
             helper.Open();
 
             var output = "";

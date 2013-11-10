@@ -9,39 +9,32 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
+    public interface FileSystemShardingStrategy
+    {
+        IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
+
+        IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
+    }
+
     [Export(typeof(ShardingStrategy))]
     [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
-    public class FileSystemPerYearShardingStrategy : ShardingStrategy
+    public class FileSystemPerYearShardingStrategy : FileSystemShardingStrategy
     {
-        IEnumerable<FileInfo> _files;
-
-        public FileSystemPerYearShardingStrategy(IEnumerable<FileInfo> files)
-        {
-            _files = files;
-        }
-
 
         public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             return values.GroupBy(g => g.Item1.Year).Select(g => new YearGroup(g.Key, g));
         }
 
-        public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
+        public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
         {
-            foreach (var file in _files)
+            foreach (var file in files.Where(f=> !f.Name.StartsWith(FileSystemFactory.Sharding)))
             {
                 int year = int.Parse(file.Name);
 
                 if (Shard_Is_In_Between(from, to, year))
                     yield return new YearGroup(year, null);
             }
-           // return _directory.GetFiles().Select(f => new
-           // {
-           //     f,
-           //     f.Name,
-           //     Year = Convert.ToInt32(Path.GetFileNameWithoutExtension(f.FullName))
-           // }).OrderBy(d => d.Year)
-           //.Select(s => new YearGroup(s.Year, Enumerable.Empty<Tuple<DateTime, double, int>>()));
         }
 
         public Guid GetId()
@@ -80,24 +73,16 @@ namespace StreamRepository.FileSystem
 
     [Export(typeof(ShardingStrategy))]
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
-    public class FileSystemPerMonthShardingStrategy : ShardingStrategy
+    public class FileSystemPerMonthShardingStrategy : FileSystemShardingStrategy
     {
-        IEnumerable<FileInfo> _files;
-
-        public FileSystemPerMonthShardingStrategy(IEnumerable<FileInfo> files)
-        {
-            _files = files;
-        }
-
-
         public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             return values.GroupBy(g => new { g.Item1.Year, g.Item1.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
 
-        public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
+        public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
         {
-            foreach (var file in _files)
+            foreach (var file in files)
             {
                 var tokens = file.Name.Split('-');
 

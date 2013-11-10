@@ -14,10 +14,10 @@ namespace StreamRepository.Azure
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
         Dictionary<string, AzurePageBlob> _blobsCache;
-        ShardingStrategy _sharding;
+        AzureBlobShardingStrategy _sharding;
         //Cache _cache;
 
-        public AzureBlobRepository(CloudBlobDirectory directory, ShardingStrategy sharding)
+        public AzureBlobRepository(CloudBlobDirectory directory, AzureBlobShardingStrategy sharding)
         {
             _directory = directory;
             _sharding = sharding;
@@ -48,7 +48,7 @@ namespace StreamRepository.Azure
 
         public IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetShards(from, to))
+            foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
                 var name = shard.GetName();
 
@@ -62,7 +62,7 @@ namespace StreamRepository.Azure
 
         public IEnumerable<byte[]> Get_Raw_Values(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetShards(from, to))
+            foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
                 var task = OpenBlobAsync(shard.GetName());
                 task.Wait();

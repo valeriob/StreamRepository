@@ -23,7 +23,7 @@ namespace StreamRepository.Azure
         public override Repository Build_Repository(string streamName)
         {
             var directory = _container.GetDirectoryReference(streamName);
-            var defaultSharding = "0F87CB4A-13D4-4991-98FA-58EA5B95DE73";
+            var defaultSharding = new AzureBlobPerYearShardingStrategy();
 
             return _factory.OperOrCreate(directory, defaultSharding);
         }

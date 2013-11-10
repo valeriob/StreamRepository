@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamRepository", "StreamRepository\StreamRepository.csproj", "{3A87F096-C124-468D-8D67-299EAA006EFF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{9366D8C5-00C8-4A6B-8C28-D8769C202C97}"
@@ -17,6 +19,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sql_Test", "Sql_Test\Sql_Test.csproj", "{ADF338BF-26A4-4851-BE1A-B47D8608B94E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{D33F9783-E012-40AC-9F39-B69FE8BCC0ED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F3C23DED-64EA-4F5F-8A1A-07A5F02EACB2}"
+	ProjectSection(SolutionItems) = preProject
+		Performance1.psess = Performance1.psess
+		Performance2.psess = Performance2.psess
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,5 +56,8 @@ Global
 		{802B0A82-3542-40A2-B664-672F91937BEA} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
 		{ADF338BF-26A4-4851-BE1A-B47D8608B94E} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
 		{D33F9783-E012-40AC-9F39-B69FE8BCC0ED} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

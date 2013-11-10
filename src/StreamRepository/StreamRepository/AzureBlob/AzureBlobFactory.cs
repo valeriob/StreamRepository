@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,33 +11,25 @@ namespace StreamRepository.Azure
 {
     public class AzureBlobFactory
     {
-        static Func<string, IEnumerable<IListBlobItem>, ShardingStrategy> _buildStrategy;
         public static readonly string Sharding = "sharding-";
 
-        static AzureBlobFactory()
+        IEnumerable<AzureBlobShardingStrategy> _strategies;
+        public AzureBlobFactory(IEnumerable<AzureBlobShardingStrategy> strategies)
         {
-            _buildStrategy = (id, blobs) => 
-            {
-                switch (id)
-                { 
-                    case "0F87CB4A-13D4-4991-98FA-58EA5B95DE73" :
-                        return new AzureBlobPerYearShardingStrategy(blobs);
-                    case "1D267B88-B620-4584-8C17-46B2B648FB20":
-                         return new AzureBlobPerMonthShardingStrategy(blobs);
-                }
-                return new NoShardingStrategy();
-            };
+            _strategies = strategies;
         }
 
-        public AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, string id)
+
+        public AzureBlobRepository OperOrCreate(CloudBlobDirectory directory, AzureBlobShardingStrategy defaultShardingStrategy)
         {
-            ShardingStrategy sharding = null;
+            AzureBlobShardingStrategy sharding = defaultShardingStrategy;
             var blobs = directory.ListBlobs().ToList();
             var dataBlobs = blobs.Where(s => !s.Uri.Segments.Last().StartsWith(Sharding)).ToList();
 
             if (!blobs.Any())
             {
-                var factoryBlob = directory.GetPageBlobReference(Get_Factory_Blob(directory, id));
+                var id = GetId(sharding);
+                var factoryBlob = directory.GetPageBlobReference(Get_Factory_Blob(directory, id.ToString()));
                 factoryBlob.Create(0);
             }
             else
@@ -44,11 +37,9 @@ namespace StreamRepository.Azure
                 var factory = blobs.Select(s=> s.Uri.Segments.Last()).Single(b => b.StartsWith(Sharding));
 
                 int spearatorIndex = factory.IndexOf('-');
-                id = factory.Substring(spearatorIndex + 1);
-                sharding = _buildStrategy(id, dataBlobs);
+                var id = factory.Substring(spearatorIndex + 1);
+                sharding = BuildShardingStrategy(id);
             }
-
-            sharding = _buildStrategy(id, dataBlobs);
 
             return new AzureBlobRepository(directory, sharding);
         }
@@ -58,6 +49,26 @@ namespace StreamRepository.Azure
             return new Uri(directory.Uri, Sharding + factoryId).ToString();
         }
 
+
+        Guid GetId(object obj)
+        {
+            var att = obj.GetType().GetCustomAttributes(typeof(GuidAttribute), true)
+                .OfType<GuidAttribute>().FirstOrDefault();
+            if (att == null)
+                throw new Exception();
+
+            return Guid.Parse(att.Value);
+        }
+
+
+        AzureBlobShardingStrategy BuildShardingStrategy(string id)
+        {
+            foreach (var s in _strategies)
+                if (GetId(s).ToString() == id)
+                    return s;
+
+            throw new Exception("Strategy not found");
+        }
     }
 
 }

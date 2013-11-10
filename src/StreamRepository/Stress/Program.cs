@@ -33,16 +33,18 @@ namespace Stress
             //Console.WriteLine("cpu speed : " + watch.Elapsed);
 
             /*---------------     FS -------------*/
-            //var filePath = @"d:\temp\Amadori";
-            //Account account = new FileSystemAccount(filePath, new FileSystemFactory());
+            var filePath = @"c:\temp\Amadori";
+            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() });
+            Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
 
             /*---------------  AZURE  -------------*/
-            var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
-            var tableClient = azureAccount.CreateCloudTableClient();
-            var blobClient = azureAccount.CreateCloudBlobClient();
-            var container = blobClient.GetContainerReference("onenergy-amadori");
-            container.CreateIfNotExists();
-            Account account = new AzureBlobAccount(container, new AzureBlobFactory());
+            //var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
+            //var tableClient = azureAccount.CreateCloudTableClient();
+            //var blobClient = azureAccount.CreateCloudBlobClient();
+            //var container = blobClient.GetContainerReference("onenergy-amadori");
+            //container.CreateIfNotExists();
+            //var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() });
+            //Account account = new AzureBlobAccount(container, bf);
 
             //var indexTable = tableClient.GetTableReference("index");
             //var operation = TableOperation.InsertOrReplace(null);
@@ -81,9 +83,12 @@ namespace Stress
 
             var streams = account.Get_Streams().ToArray();
             var random = new Random();
+            var id = random.Next(streams.Length);
+            var stream = streams[id];
+            var rep = account.Build_Repository(stream);
             while (true)
             {
-                var rep = account.Build_Repository(streams[random.Next(streams.Length)]);
+               
 
                 watch = Stopwatch.StartNew();
                 var count = rep.Get_Raw_Values(new DateTime(2012, 1, 1)).Count();

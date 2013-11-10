@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,32 +11,25 @@ namespace StreamRepository.FileSystem
 {
     public class FileSystemFactory
     {
-        static Func<string, IEnumerable<FileInfo>, ShardingStrategy> _buildStrategy;
         public static readonly string Sharding = "sharding-";
+        //IEnumerable<FileSystemShardingStrategy> _strategies;
+        Dictionary<string, FileSystemShardingStrategy> _strategies;
 
-        static FileSystemFactory()
+        public FileSystemFactory(IEnumerable<FileSystemShardingStrategy> strategies)
         {
-            _buildStrategy = (id, files) => 
-            {
-                switch (id)
-                { 
-                    case "9C2880C1-16D7-4D90-8D37-CC3D7231EAB0" :
-                        return new FileSystemPerYearShardingStrategy(files);
-                    case "CAABA129-479F-4F36-B5B9-B08C59EEB6CF":
-                        return new FileSystemPerMonthShardingStrategy(files);
-                }
-                return new NoShardingStrategy();
-            };
+            _strategies = strategies.ToDictionary(d => GetId(d).ToString(), r=> r);
         }
 
-        public FileSystemRepository OperOrCreate(DirectoryInfo directory, string id)
+        public FileSystemRepository OperOrCreate(DirectoryInfo directory, FileSystemShardingStrategy defaultShardingStrategy)
         {
-            ShardingStrategy sharding = null;
+            var sharding = defaultShardingStrategy;
+
             var files = directory.GetFiles().ToList();
             var dataFiles = files.Where(f => !f.Name.StartsWith(Sharding)).ToList();
 
             if (!files.Any())
             {
+                var id = GetId(sharding);
                 var path = Path.Combine(directory.FullName, Sharding + id);
                 using (new FileInfo(path).Create()) ;
             }
@@ -44,8 +38,8 @@ namespace StreamRepository.FileSystem
                 var factory = files.Single(f => f.Name.StartsWith(Sharding)).Name;
 
                 int spearatorIndex = factory.IndexOf('-');
-                id = factory.Substring(spearatorIndex + 1);
-                sharding = _buildStrategy(id, dataFiles);
+                var id = factory.Substring(spearatorIndex + 1);
+                sharding = BuildShardingStrategy(id);
             }
 
             return new FileSystemRepository(directory, sharding);
@@ -55,6 +49,31 @@ namespace StreamRepository.FileSystem
         {
             return !directory.Exists;
         }
+
+        Guid GetId(object obj)
+        {
+            var att = obj.GetType().GetCustomAttributes(typeof(GuidAttribute), true)
+                .OfType<GuidAttribute>().FirstOrDefault();
+            if (att == null)
+                throw new Exception();
+
+            return Guid.Parse(att.Value);
+        }
+
+
+        FileSystemShardingStrategy BuildShardingStrategy(string id)
+        {
+            return _strategies[id];
+        }
+
+        //FileSystemShardingStrategy BuildShardingStrategy(string id)
+        //{
+        //    foreach (var s in _strategies)
+        //        if (GetId(s).ToString() == id)
+        //            return s.v;
+
+        //    throw new Exception("Strategy not found");
+        //}
 
     }
 

@@ -16,7 +16,7 @@ namespace StreamRepository
 
         public FramedValue(DateTime timestamp, double value, int importId)
         {
-            Timestamp = timestamp.ToUniversalTime();
+            Timestamp = timestamp;//.ToUniversalTime();
             Value = value;
             ImportId = importId;
         }
@@ -26,6 +26,13 @@ namespace StreamRepository
             writer.Write(Timestamp.Ticks);
             writer.Write(Value);
             writer.Write(ImportId);
+        }
+
+        public static void Serialize(DateTime timestamp, double value, int importId, BinaryWriter writer)
+        {
+            writer.Write(timestamp.Ticks);
+            writer.Write(value);
+            writer.Write(importId);
         }
 
         public static FramedValue Deserialize(BinaryReader reader)

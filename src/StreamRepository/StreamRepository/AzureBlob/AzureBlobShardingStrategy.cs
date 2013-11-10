@@ -10,26 +10,26 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.Azure
 {
+    public interface AzureBlobShardingStrategy
+    {
+        IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
+
+        IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
+
+    }
     [Export(typeof(ShardingStrategy))]
     [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
-    public class AzureBlobPerYearShardingStrategy : ShardingStrategy
+    public class AzureBlobPerYearShardingStrategy : AzureBlobShardingStrategy
     {
-        IEnumerable<IListBlobItem> _blobs;
-
-        public AzureBlobPerYearShardingStrategy(IEnumerable<IListBlobItem> blobs)
-        {
-            _blobs = blobs;
-        }
-
 
         public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             return values.GroupBy(g => g.Item1.Year).Select(g => new YearGroup(g.Key, g));
         }
 
-        public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
+        public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> allBlobs, DateTime? from = null, DateTime? to = null)
         {
-            var blobs = _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)).ToList();
+            var blobs = allBlobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)).ToList();
             var shards = new List<YearGroup>();
 
             foreach (var blob in blobs)
@@ -80,24 +80,17 @@ namespace StreamRepository.Azure
 
     [Export(typeof(ShardingStrategy))]
     [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
-    public class AzureBlobPerMonthShardingStrategy : ShardingStrategy
+    public class AzureBlobPerMonthShardingStrategy : AzureBlobShardingStrategy
     {
-        IEnumerable<IListBlobItem> _blobs;
-
-        public AzureBlobPerMonthShardingStrategy(IEnumerable<IListBlobItem> blobs)
-        {
-            _blobs = blobs;
-        }
-
 
         public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
         {
             return values.GroupBy(g => new { g.Item1.Year, g.Item1.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
 
-        public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
+        public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null)
         {
-            foreach (var blob in _blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)))
+            foreach (var blob in blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)))
             {
                 var tokens = blob.Split('-');
 

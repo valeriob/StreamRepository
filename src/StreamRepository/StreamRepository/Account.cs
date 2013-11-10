@@ -15,9 +15,9 @@ namespace StreamRepository
             int streams = 0;
             var watch = Stopwatch.StartNew();
 
-            var opt = new ParallelOptions { MaxDegreeOfParallelism = 10 };
-            Parallel.ForEach(Get_Streams(), opt, stream => 
-            //foreach (var stream in Get_Streams())
+            var opt = new ParallelOptions { MaxDegreeOfParallelism = 1 };
+            //Parallel.ForEach(Get_Streams(), opt, stream => 
+            foreach (var stream in Get_Streams())
             {
                 streams++;
                 var repository = Build_Repository(stream);
@@ -27,7 +27,7 @@ namespace StreamRepository
                 var speed = values / watch.Elapsed.TotalSeconds;
                 Console.WriteLine("Completed  number {1} : {2:0} total of {3} ", stream, streams, speed, values / 1000000);
             }
-            );
+         //   );
 
             watch.Stop();
 
@@ -74,6 +74,7 @@ namespace StreamRepository
             int batchSize = 10000;
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
+            batchSize = int.MaxValue;
             var batch = new List<Tuple<DateTime, double, int>>();
 
             repository.Hint_Sampling_Period( samples);
@@ -83,14 +84,14 @@ namespace StreamRepository
 
                 if (i % batchSize == 0 && i != 1)
                 {
-                    repository.Append_Values(batch);
+                    repository.Append_Values(batch).Wait();
                     batch.Clear();
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
             }
-            repository.Append_Values(batch);
+            repository.Append_Values(batch).Wait();
 
             watch.Stop();
 

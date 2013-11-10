@@ -12,10 +12,12 @@ namespace StreamRepository.FileSystem
     {
         DirectoryInfo _directory;
         FileSystemFactory _factory;
+        FileSystemShardingStrategy _defaultStrategy;
 
-        public FileSystemAccount(string directoryPath, FileSystemFactory factory)
+        public FileSystemAccount(string directoryPath, FileSystemFactory factory, FileSystemShardingStrategy defaultStrategy )
         {
             _factory = factory;
+            _defaultStrategy = defaultStrategy;
             _directory = new DirectoryInfo(directoryPath);
             if (!_directory.Exists)
                 _directory.Create();
@@ -28,7 +30,7 @@ namespace StreamRepository.FileSystem
             if (!directory.Exists)
                 directory.Create();
 
-            return _factory.OperOrCreate(directory, "9C2880C1-16D7-4D90-8D37-CC3D7231EAB0");
+            return _factory.OperOrCreate(directory, _defaultStrategy);
         }
 
         public override void Reset()

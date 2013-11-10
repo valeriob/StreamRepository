@@ -15,10 +15,10 @@ namespace StreamRepository.FileSystem
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _directory;
-        ShardingStrategy _sharding;
+        FileSystemShardingStrategy _sharding;
 
 
-        public FileSystemRepository(DirectoryInfo folder, ShardingStrategy sharding)
+        public FileSystemRepository(DirectoryInfo folder, FileSystemShardingStrategy sharding)
         {
             _sharding = sharding;
             _directory = folder;
@@ -38,12 +38,16 @@ namespace StreamRepository.FileSystem
                 {
                     var tail = header.Index;
 
-                    using (var buffer = new BufferPoolStream(new BufferPool()))
+                    //using (var buffer = new BufferPoolStream(new BufferPool()))
+                    using(var buffer = new MemoryStream())
                     {
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
                             foreach (var value in group)
-                                new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
-
+                            {
+                                //var fv = new FramedValue(value.Item1, value.Item2, value.Item3);
+                                //fv.Serialize(writer);
+                                FramedValue.Serialize(value.Item1, value.Item2, value.Item3, writer);
+                            }
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
                         int writtenBytes = group.Count() * FramedValue.SizeInBytes();
@@ -57,7 +61,7 @@ namespace StreamRepository.FileSystem
                     header.Timestamp = DateTime.Now;
                    
                 }
-                Write_Header(header, name);
+                await Write_Header(header, name);
             }
         }
 
@@ -73,7 +77,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetShards(from, to))
+            var files = _directory.GetFiles();
+
+            foreach (var shard in _sharding.GetShards(files, from, to))
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
@@ -93,7 +99,8 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
         {
-            foreach (var shard in _sharding.GetShards(from, to))
+            var files = _directory.GetFiles();
+            foreach (var shard in _sharding.GetShards(files, from, to))
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
@@ -160,7 +167,7 @@ namespace StreamRepository.FileSystem
 
         Stream Open_Stream_For_Writing(string name)
         {
-            //return new FileStream(Get_Year_With_Caching(year).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
+            return new FileStream(Get_FileInfo_With_Caching(name).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
            // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
             return Get_FileInfo_With_Caching(name).Open(FileMode.Open);
         }

@@ -97,7 +97,8 @@ namespace StreamRepository.Azure
         public void Reset()
         {
             foreach (var b in _directory.ListBlobs())
-                b.Container.GetPageBlobReference(b.Uri.ToString()).Delete();
+                //if (b.Uri.ToString().Contains(AzureBlobFactory.Sharding) == false)
+                    b.Container.GetPageBlobReference(b.Uri.ToString()).Delete();
         }
     }
 

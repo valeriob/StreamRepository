@@ -31,8 +31,8 @@ namespace ImportOnEnergy
             var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() });
             Account account = new AzureBlobAccount(container, bf);
 
-            TestImportedData(account);
-            //RunImport(account);
+            //TestImportedData(account);
+            RunImport(account);
         }
         public static void TestImportedData(Account account)
         {
@@ -60,7 +60,6 @@ namespace ImportOnEnergy
     {
         Account _account;
         string _cs;
-        IDbConnection _connection;
         public int ImportedStreams { get; private set; }
 
 
@@ -68,15 +67,17 @@ namespace ImportOnEnergy
         {
             _account = account;
             _cs = cs;
-
-            _connection = new System.Data.SqlClient.SqlConnection(cs);
-            _connection.Open();
         }
+
 
         public void ImportAllStreams()
         {
-            var ids = GetStreamIds().OrderBy(d => d).ToList();
-
+            var ids = new List<int>();
+            using (var con = new System.Data.SqlClient.SqlConnection(_cs))
+            {
+                con.Open();
+                ids = GetStreamIds(con).OrderBy(d => d).ToList();
+            }
             //var po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
             //Parallel.ForEach(ids, po, id => 
             //{
@@ -100,31 +101,41 @@ namespace ImportOnEnergy
         }
         void TryImportStream(int id)
         {
-            var repository = _account.BuildRepository(id + "");
+            Repository repository = null;
+            var events = Enumerable.Empty<Event>();
+            while(true)
+            {
+                try
+                {
+                    using (var con = new System.Data.SqlClient.SqlConnection(_cs))
+                    {
+                        con.Open();
+                        events = LoadEventsForStream(id, con);
+                    }
+                    break;
+                }
+                catch
+                {
+                    //Console.WriteLine("Retri")
+                }
+            }
+
             while (true)
             {
                 try
                 {
-                    repository.Reset();
-                    var events = LoadEventsForStream(id);
+                    repository = _account.BuildRepository(id + "");
                     repository.AppendValues(events).Wait();
                     break;
                 }
                 catch
                 {
-
+                    repository.Reset();
                 }
             }
         }
 
-        void ImportStream(int id)
-        {
-            var repository = _account.BuildRepository(id + "");
-            var events = LoadEventsForStream(id);
-            repository.AppendValues(events).Wait();
-        }
-
-        public IEnumerable<Event> LoadEventsForStream(int id)
+        public IEnumerable<Event> LoadEventsForStream(int id, IDbConnection con)
         {
             string query = @"SELECT Id, Value, StreamId, ObsolescenceEventId, UTCFrom, IsDeletedValue, ImportEventId, UTCTo from InputValue
                     WHERE StreamId = @StreamId";
@@ -132,7 +143,7 @@ namespace ImportOnEnergy
             var parameters = new[] { Tuple.Create<string, object>("StreamId", id) };
 
             var result = new List<Event>();
-            using (var cmd = Prepare(_connection, query, parameters))
+            using (var cmd = Prepare(con, query, parameters))
             using (var reader = cmd.ExecuteReader())
                 while (reader.Read())
                 {
@@ -142,13 +153,13 @@ namespace ImportOnEnergy
             return result;
         }
 
-        IEnumerable<int> GetStreamIds()
+        IEnumerable<int> GetStreamIds(IDbConnection connection)
         {
             string query = "select Id from Stream where IsObsolete = 0";
 
             var ids = new List<int>();
 
-            using (var cmd = Prepare(_connection, query))
+            using (var cmd = Prepare(connection, query))
             using (var reader = cmd.ExecuteReader())
                 while (reader.Read())
                     ids.Add(reader.GetInt32(0));

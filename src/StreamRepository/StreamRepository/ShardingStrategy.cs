@@ -12,7 +12,7 @@ namespace StreamRepository
 {
     public interface ShardingStrategy
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
+        IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values);
 
         IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null);
     }
@@ -24,7 +24,7 @@ namespace StreamRepository
 
     public interface ShardWithValues : Shard
     {
-        IEnumerable<Tuple<DateTime, double, int>> GetValues();
+        IEnumerable<Event> GetValues();
     }
 
 
@@ -32,7 +32,7 @@ namespace StreamRepository
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]
     public class NoShardingStrategy : ShardingStrategy
     {
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
+        public IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values)
         {
             yield return new NoGroup(values);
         }
@@ -43,14 +43,14 @@ namespace StreamRepository
 
         public class NoGroup : ShardWithValues
         {
-            IEnumerable<Tuple<DateTime, double, int>> _values;
+            IEnumerable<Event> _values;
 
-            public NoGroup(IEnumerable<Tuple<DateTime, double, int>> values)
+            public NoGroup(IEnumerable<Event> values)
             {
                 _values = values;
             }
 
-            public IEnumerable<Tuple<DateTime, double, int>> GetValues()
+            public IEnumerable<Event> GetValues()
             {
                 return _values;
             }

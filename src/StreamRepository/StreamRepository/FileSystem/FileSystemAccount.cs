@@ -14,6 +14,7 @@ namespace StreamRepository.FileSystem
         FileSystemFactory _factory;
         FileSystemShardingStrategy _defaultStrategy;
 
+
         public FileSystemAccount(string directoryPath, FileSystemFactory factory, FileSystemShardingStrategy defaultStrategy )
         {
             _factory = factory;
@@ -24,7 +25,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public override Repository Build_Repository(string streamName)
+        public override Repository BuildRepository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
             if (!directory.Exists)
@@ -39,7 +40,7 @@ namespace StreamRepository.FileSystem
                 _directory.Delete(true);
             _directory.Create();
         }
-        public override IEnumerable<string> Get_Streams()
+        public override IEnumerable<string> GetStreams()
         {
             return _directory.EnumerateDirectories().Select(s => s.Name);
         }

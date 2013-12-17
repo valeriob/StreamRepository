@@ -9,7 +9,7 @@ namespace StreamRepository
 {
     public interface Repository
     {
-        Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values);
+        Task AppendValues(IEnumerable<Event> values);
 
         IEnumerable<RecordValue> Get_Values(DateTime? from = null, DateTime? to = null);
 
@@ -18,6 +18,21 @@ namespace StreamRepository
         void Hint_Sampling_Period(int samplingPeriodInSeconds);
 
         //void Mark_Value_As_Obsolete(RecordValue value);
+    }
+
+    public class Event
+    {
+        //public int Id { get; set; }
+        public DateTime Timestamp { get; private set; }
+        public double Value { get; private set; }
+        public int ImportId { get; private set; }
+
+        public Event(DateTime timestamp, double value, int importId)
+        {
+            Timestamp = timestamp;
+            Value = value;
+            ImportId = importId;
+        }
     }
 
  

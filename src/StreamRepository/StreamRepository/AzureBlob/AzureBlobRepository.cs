@@ -26,7 +26,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+        public async Task AppendValues(IEnumerable<Event> values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -35,13 +35,13 @@ namespace StreamRepository.Azure
                 {
                     using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
                         foreach (var value in group)
-                            new FramedValue(value.Item1, value.Item2, value.Item3).Serialize(writer);
+                            new FramedValue(value.Timestamp, value.Value, value.ImportId).Serialize(writer);
 
                     int writtenBytes = group.Count() * FramedValue.SizeInBytes();
 
-                    var blob = OpenBlobAsync(shard.GetName());
+                    var blob = await OpenBlobAsync(shard.GetName());
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.Result.AppendAsync(stream);
+                    await blob.AppendAsync(stream);
                 }
             }
         }
@@ -85,7 +85,7 @@ namespace StreamRepository.Azure
             {
                 blob = new AzurePageBlob(_directory.GetPageBlobReference(name));
                 
-                await  blob.OpenAsync();
+                await blob.OpenAsync();
 
                 _blobsCache[name] = blob;
             }

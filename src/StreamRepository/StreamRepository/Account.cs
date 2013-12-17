@@ -17,10 +17,10 @@ namespace StreamRepository
 
             var opt = new ParallelOptions { MaxDegreeOfParallelism = 1 };
             //Parallel.ForEach(Get_Streams(), opt, stream => 
-            foreach (var stream in Get_Streams())
+            foreach (var stream in GetStreams())
             {
                 streams++;
-                var repository = Build_Repository(stream);
+                var repository = BuildRepository(stream);
                 foreach (var value in repository.Get_Values())
                     values++;
 
@@ -60,7 +60,7 @@ namespace StreamRepository
 
         public void Write_Stream(string name, int years, int samplingPeriodInSeconds)
         {
-            var repository = Build_Repository(name);
+            var repository = BuildRepository(name);
 
             for (int year = DateTime.Now.Year - years; year < DateTime.Now.Year; year++)
                 Write_Year(repository, year, samplingPeriodInSeconds);
@@ -75,33 +75,34 @@ namespace StreamRepository
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             batchSize = int.MaxValue;
-            var batch = new List<Tuple<DateTime, double, int>>();
+            var batch = new List<Event>();
 
             repository.Hint_Sampling_Period( samples);
             for (int i = 1; i < samples + 1; i++)
             {
-                batch.Add(new Tuple<DateTime, double, int>(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
+                batch.Add(new Event(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
 
                 if (i % batchSize == 0 && i != 1)
                 {
-                    repository.Append_Values(batch).Wait();
+                    repository.AppendValues(batch).Wait();
                     batch.Clear();
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
             }
-            repository.Append_Values(batch).Wait();
+            repository.AppendValues(batch).Wait();
 
             watch.Stop();
 
             //Console.WriteLine("Written {2} : Elapses {0}, append/s {1}", watch.Elapsed, 525600 / watch.Elapsed.TotalSeconds, year);
         }
 
+        
 
         public abstract void Reset();
-        public abstract Repository Build_Repository(string streamName);
-        public abstract IEnumerable<string> Get_Streams();
+        public abstract Repository BuildRepository(string streamName);
+        public abstract IEnumerable<string> GetStreams();
     }
 
 }

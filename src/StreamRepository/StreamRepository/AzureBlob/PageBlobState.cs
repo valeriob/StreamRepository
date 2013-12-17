@@ -48,7 +48,7 @@ namespace StreamRepository.Azure
                 using (var stream = _blob.OpenRead())
                 {
                     stream.Seek(_commitPosition.Page * PageSize, SeekOrigin.Begin);
-                    await stream.ReadAsync(lastPage, 0, 512);
+                    await stream.ReadAsync(lastPage, 0, PageSize);
                 }
             }
 

@@ -20,14 +20,14 @@ namespace StreamRepository.Azure
             _factory = factory;
         }
 
-        public override Repository Build_Repository(string streamName)
+        public override Repository BuildRepository(string streamName)
         {
             var directory = _container.GetDirectoryReference(streamName);
             var defaultSharding = new AzureBlobPerYearShardingStrategy();
 
             return _factory.OperOrCreate(directory, defaultSharding);
         }
-        public override IEnumerable<string> Get_Streams()
+        public override IEnumerable<string> GetStreams()
         {
             return _container.ListBlobs().Select(b => b.Uri.Segments.Last());
         }

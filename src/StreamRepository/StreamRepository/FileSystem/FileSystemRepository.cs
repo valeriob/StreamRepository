@@ -26,13 +26,13 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public async Task Append_Values(IEnumerable<Tuple<DateTime, double, int>> values)
+        public async Task AppendValues(IEnumerable<Event> values)
         {
             foreach (var shard in _sharding.Shard(values) )
             {
                 var group = shard.GetValues();
                 var name = shard.GetName();
-                var header = Read_Header(name);
+                var header = ReadHeader(name);
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
@@ -46,7 +46,7 @@ namespace StreamRepository.FileSystem
                             {
                                 //var fv = new FramedValue(value.Item1, value.Item2, value.Item3);
                                 //fv.Serialize(writer);
-                                FramedValue.Serialize(value.Item1, value.Item2, value.Item3, writer);
+                                FramedValue.Serialize(value.Timestamp, value.Value, value.ImportId, writer);
                             }
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
@@ -61,7 +61,7 @@ namespace StreamRepository.FileSystem
                     header.Timestamp = DateTime.Now;
                    
                 }
-                await Write_Header(header, name);
+                await WriteHeader(header, name);
             }
         }
 
@@ -123,7 +123,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        StreamHeader Read_Header(string name)
+        StreamHeader ReadHeader(string name)
         {
             try
             {
@@ -140,7 +140,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        async Task Write_Header(StreamHeader header, string name)
+        async Task WriteHeader(StreamHeader header, string name)
         {
             using (var buffer = new BufferPoolStream(new BufferPool()))
             {

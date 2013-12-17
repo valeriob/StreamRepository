@@ -11,7 +11,7 @@ namespace StreamRepository.FileSystem
 {
     public interface FileSystemShardingStrategy
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values);
+        IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values);
 
         IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
     }
@@ -21,9 +21,9 @@ namespace StreamRepository.FileSystem
     public class FileSystemPerYearShardingStrategy : FileSystemShardingStrategy
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
+        public IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values)
         {
-            return values.GroupBy(g => g.Item1.Year).Select(g => new YearGroup(g.Key, g));
+            return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
@@ -51,15 +51,15 @@ namespace StreamRepository.FileSystem
         public class YearGroup : ShardWithValues
         {
             int _year;
-            IEnumerable<Tuple<DateTime, double, int>> _values;
+            IEnumerable<Event> _values;
 
-            public YearGroup(int year, IEnumerable<Tuple<DateTime, double, int>> values)
+            public YearGroup(int year, IEnumerable<Event> values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<Tuple<DateTime, double, int>> GetValues()
+            public IEnumerable<Event> GetValues()
             {
                 return _values;
             }
@@ -75,9 +75,9 @@ namespace StreamRepository.FileSystem
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
     public class FileSystemPerMonthShardingStrategy : FileSystemShardingStrategy
     {
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<Tuple<DateTime, double, int>> values)
+        public IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values)
         {
-            return values.GroupBy(g => new { g.Item1.Year, g.Item1.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
+            return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
@@ -112,16 +112,16 @@ namespace StreamRepository.FileSystem
         {
             int _year;
             int _month;
-            IEnumerable<Tuple<DateTime, double, int>> _values;
+            IEnumerable<Event> _values;
 
-            public MonthGroup(int year, int month, IEnumerable<Tuple<DateTime, double, int>> values)
+            public MonthGroup(int year, int month, IEnumerable<Event> values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<Tuple<DateTime, double, int>> GetValues()
+            public IEnumerable<Event> GetValues()
             {
                 return _values;
             }

@@ -81,11 +81,11 @@ namespace Stress
             Console.ReadLine();
 
 
-            var streams = account.Get_Streams().ToArray();
+            var streams = account.GetStreams().ToArray();
             var random = new Random();
             var id = random.Next(streams.Length);
             var stream = streams[id];
-            var rep = account.Build_Repository(stream);
+            var rep = account.BuildRepository(stream);
             while (true)
             {
                

@@ -207,6 +207,12 @@ namespace StreamRepository.FileSystem
             return file;
         }
 
+
+
+        public void Reset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 

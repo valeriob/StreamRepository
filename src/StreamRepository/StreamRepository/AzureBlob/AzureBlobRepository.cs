@@ -92,6 +92,13 @@ namespace StreamRepository.Azure
             return blob;
         }
 
+
+
+        public void Reset()
+        {
+            foreach (var b in _directory.ListBlobs())
+                b.Container.GetPageBlobReference(b.Uri.ToString()).Delete();
+        }
     }
 
 }

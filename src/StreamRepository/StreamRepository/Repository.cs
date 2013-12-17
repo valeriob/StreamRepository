@@ -18,6 +18,8 @@ namespace StreamRepository
         void Hint_Sampling_Period(int samplingPeriodInSeconds);
 
         //void Mark_Value_As_Obsolete(RecordValue value);
+
+        void Reset();
     }
 
     public class Event

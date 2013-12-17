@@ -31,6 +31,15 @@ namespace ImportOnEnergy
             var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() });
             Account account = new AzureBlobAccount(container, bf);
 
+            TestImportedData(account);
+            //RunImport(account);
+        }
+        public static void TestImportedData(Account account)
+        {
+            account.Read_Streams();
+        }
+        public static void RunImport(Account account)
+        {
             account.Reset();
 
             var sw = Stopwatch.StartNew();
@@ -81,11 +90,30 @@ namespace ImportOnEnergy
             foreach (var id in ids)
             {
                 var sw = Stopwatch.StartNew();
-                ImportStream(id);
+
+                TryImportStream(id);
                 sw.Stop();
                 ImportedStreams++;
 
                 Console.WriteLine("Imported stream {0} in {1}", id, sw.Elapsed);
+            }
+        }
+        void TryImportStream(int id)
+        {
+            var repository = _account.BuildRepository(id + "");
+            while (true)
+            {
+                try
+                {
+                    repository.Reset();
+                    var events = LoadEventsForStream(id);
+                    repository.AppendValues(events).Wait();
+                    break;
+                }
+                catch
+                {
+
+                }
             }
         }
 

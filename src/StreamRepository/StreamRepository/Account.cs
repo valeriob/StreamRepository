@@ -16,7 +16,7 @@ namespace StreamRepository
             var watch = Stopwatch.StartNew();
 
             var opt = new ParallelOptions { MaxDegreeOfParallelism = 1 };
-            //Parallel.ForEach(Get_Streams(), opt, stream => 
+
             foreach (var stream in GetStreams())
             {
                 streams++;
@@ -27,7 +27,6 @@ namespace StreamRepository
                 var speed = values / watch.Elapsed.TotalSeconds;
                 Console.WriteLine("Completed  number {1} : {2:0} total of {3} ", stream, streams, speed, values / 1000000);
             }
-         //   );
 
             watch.Stop();
 

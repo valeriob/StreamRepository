@@ -96,7 +96,9 @@ namespace ImportOnEnergy
                 sw.Stop();
                 ImportedStreams++;
 
-                Console.WriteLine("Imported stream {0} in {1}", id, sw.Elapsed);
+                //Console.WriteLine("Imported stream {0} in {1}", id, sw.Elapsed);
+
+                Console.WriteLine(" Done in {0}", sw.Elapsed);
             }
         }
         void TryImportStream(int id)
@@ -111,11 +113,14 @@ namespace ImportOnEnergy
                     {
                         con.Open();
                         events = LoadEventsForStream(id, con);
+                        Console.Write("Stram {0} read {1} elements  ", id, events.Count());
                     }
                     break;
                 }
-                catch
+                catch(Exception ex)
                 {
+                    Console.WriteLine("Error reading Stram {0}  ", id);
+                    Console.WriteLine("{0} - {1}", ex.Message, ex.StackTrace);
                     //Console.WriteLine("Retri")
                 }
             }
@@ -126,6 +131,7 @@ namespace ImportOnEnergy
                 {
                     repository = _account.BuildRepository(id + "");
                     repository.AppendValues(events).Wait();
+                   // Console.WriteLine(" Done", id);
                     break;
                 }
                 catch
@@ -200,9 +206,14 @@ namespace ImportOnEnergy
                 UTCTo = reader.GetDateTime(7),
             };
         }
+
         public static Event ToEvent(this IDataReader reader)
         {
-            return new Event(reader.GetDateTime(7), reader.GetDouble(1), (int)reader.GetInt64(6));
+            double value = 0;
+            if (reader.IsDBNull(1) == false)
+                value = reader.GetDouble(1);
+
+            return new Event(reader.GetDateTime(7), value, (int)reader.GetInt64(6));
         }
 
     }

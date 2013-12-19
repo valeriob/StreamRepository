@@ -16,17 +16,19 @@ namespace StreamRepository.FileSystem
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _directory;
         FileSystemShardingStrategy _sharding;
+        IBuildStuff _builder;
 
 
-        public FileSystemRepository(DirectoryInfo folder, FileSystemShardingStrategy sharding)
+        public FileSystemRepository(DirectoryInfo folder, FileSystemShardingStrategy sharding, IBuildStuff builder)
         {
             _sharding = sharding;
             _directory = folder;
+            _builder = builder;
             _fileCache = new Dictionary<string, FileInfo>();
         }
 
 
-        public async Task AppendValues(IEnumerable<Event> values)
+        public async Task AppendValues(IEnumerable<ICanBeSharded> values)
         {
             foreach (var shard in _sharding.Shard(values) )
             {
@@ -44,13 +46,14 @@ namespace StreamRepository.FileSystem
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
                             foreach (var value in group)
                             {
+                                _builder.Serialize(value, writer);
                                 //var fv = new FramedValue(value.Item1, value.Item2, value.Item3);
                                 //fv.Serialize(writer);
-                                FramedValue.Serialize(value.Timestamp, value.Value, value.ImportId, writer);
+                                //FramedValue.Serialize(value.Timestamp, value.Value, value.ImportId, writer);
                             }
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
-                        int writtenBytes = group.Count() * FramedValue.SizeInBytes();
+                        int writtenBytes = group.Count() * _builder.SizeInBytes();
                         await buffer.CopyToAsync(stream);
                         stream.Flush();
 
@@ -75,7 +78,7 @@ namespace StreamRepository.FileSystem
             //}
         }
 
-        public IEnumerable<RecordValue> Get_Values(DateTime? from, DateTime? to)
+        public IEnumerable<object> GetValues(DateTime? from, DateTime? to)
         {
             var files = _directory.GetFiles();
 
@@ -83,16 +86,14 @@ namespace StreamRepository.FileSystem
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
-                    // TODO read obsoleted log, and enrich value.
-
+                    //StreamHeader header = null;
                     var reader = new BinaryReader(file);
-
-                    var header = StreamHeader.Deserialize(reader);
+                    StreamHeader header = StreamHeader.Deserialize(reader);
 
                     file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
-                    while (file.Position < header.Index)
-                        //yield return FramedValue.Deserialize(reader, file.Position);
-                        yield return FramedValue.Deserialize(file, file.Position);
+                    reader = new BinaryReader(file);
+                        while (file.Position < header.Index)
+                            yield return _builder.Deserialize(reader);
                 }
             }
         }
@@ -104,18 +105,14 @@ namespace StreamRepository.FileSystem
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
-                    // TODO read obsoleted log, and enrich value.
-
+                    //StreamHeader header = null;
                     var reader = new BinaryReader(file);
-
-                    var header = StreamHeader.Deserialize(reader);
+                    StreamHeader header = StreamHeader.Deserialize(reader);
 
                     file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
                     while (file.Position < header.Index)
                     {
-                        //yield return FramedValue.Deserialize(reader, file.Position);
-                       // yield return new ArraySegment<byte>(file, (int)file.Position, FramedValue.SizeInBytes());
-                        var data = new byte[FramedValue.SizeInBytes()];
+                        var data = new byte[_builder.SizeInBytes()];
                         file.Read(data, 0, data.Length);
                         yield return data;
                     }
@@ -134,7 +131,7 @@ namespace StreamRepository.FileSystem
                     return StreamHeader.Deserialize(reader);
                 }
             }
-            catch (System.IO.EndOfStreamException)
+            catch (EndOfStreamException)
             {
                 return new StreamHeader() { Index = StreamHeader.SizeInBytes() };
             }

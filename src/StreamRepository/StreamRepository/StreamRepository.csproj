@@ -73,6 +73,7 @@
     <Compile Include="AzureBlob\Page.cs" />
     <Compile Include="AzureBlob\Position.cs" />
     <Compile Include="CanReadValues.cs" />
+    <Compile Include="Event.cs" />
     <Compile Include="EventStore.BufferManagement\BufferManager.cs" />
     <Compile Include="EventStore.BufferManagement\BufferPool.cs" />
     <Compile Include="EventStore.BufferManagement\BufferPoolStream.cs" />

@@ -12,7 +12,7 @@ namespace StreamRepository.Azure
 {
     public interface AzureBlobShardingStrategy
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values);
+        IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
 
@@ -22,7 +22,7 @@ namespace StreamRepository.Azure
     public class AzureBlobPerYearShardingStrategy : AzureBlobShardingStrategy
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values)
+        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
         }
@@ -56,17 +56,17 @@ namespace StreamRepository.Azure
         public class YearGroup : ShardWithValues
         {
             int _year;
-            IEnumerable<Event> _values;
+            IEnumerable<ICanBeSharded> _values;
             public int Year { get { return _year; } }
 
 
-            public YearGroup(int year, IEnumerable<Event> values)
+            public YearGroup(int year, IEnumerable<ICanBeSharded> values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<Event> GetValues()
+            public IEnumerable<ICanBeSharded> GetValues()
             {
                 return _values;
             }
@@ -83,7 +83,7 @@ namespace StreamRepository.Azure
     public class AzureBlobPerMonthShardingStrategy : AzureBlobShardingStrategy
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<Event> values)
+        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
@@ -120,16 +120,16 @@ namespace StreamRepository.Azure
         {
             int _year;
             int _month;
-            IEnumerable<Event> _values;
+            IEnumerable<ICanBeSharded> _values;
 
-            public MonthGroup(int year, int month, IEnumerable<Event> values)
+            public MonthGroup(int year, int month, IEnumerable<ICanBeSharded> values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<Event> GetValues()
+            public IEnumerable<ICanBeSharded> GetValues()
             {
                 return _values;
             }

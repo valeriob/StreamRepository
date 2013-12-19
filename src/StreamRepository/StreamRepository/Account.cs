@@ -15,17 +15,17 @@ namespace StreamRepository
             int streams = 0;
             var watch = Stopwatch.StartNew();
 
-            var opt = new ParallelOptions { MaxDegreeOfParallelism = 1 };
+            var opt = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 
             foreach (var stream in GetStreams())
             {
                 streams++;
                 var repository = BuildRepository(stream);
-                foreach (var value in repository.Get_Values())
+                foreach (var value in repository.GetValues())
                     values++;
 
                 var speed = values / watch.Elapsed.TotalSeconds;
-                Console.WriteLine("Completed  number {1} : {2:0} total of {3} ", stream, streams, speed, values / 1000000);
+                Console.WriteLine("Completed {0} number {1} : {2:0} total of {3} ", stream, streams, speed, values);
             }
 
             watch.Stop();

@@ -14,10 +14,12 @@ namespace StreamRepository.FileSystem
         public static readonly string Sharding = "sharding-";
         //IEnumerable<FileSystemShardingStrategy> _strategies;
         Dictionary<string, FileSystemShardingStrategy> _strategies;
+        IBuildStuff _builder;
 
-        public FileSystemFactory(IEnumerable<FileSystemShardingStrategy> strategies)
+        public FileSystemFactory(IEnumerable<FileSystemShardingStrategy> strategies, IBuildStuff builder)
         {
             _strategies = strategies.ToDictionary(d => GetId(d).ToString(), r=> r);
+            _builder = builder;
         }
 
         public FileSystemRepository OperOrCreate(DirectoryInfo directory, FileSystemShardingStrategy defaultShardingStrategy)
@@ -42,7 +44,7 @@ namespace StreamRepository.FileSystem
                 sharding = BuildShardingStrategy(id);
             }
 
-            return new FileSystemRepository(directory, sharding);
+            return new FileSystemRepository(directory, sharding, _builder);
         }
 
         bool Stream_does_not_exists(DirectoryInfo directory)

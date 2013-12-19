@@ -9,9 +9,9 @@ namespace StreamRepository
 {
     public interface Repository
     {
-        Task AppendValues(IEnumerable<Event> values);
+        Task AppendValues(IEnumerable<ICanBeSharded> values);
 
-        IEnumerable<RecordValue> Get_Values(DateTime? from = null, DateTime? to = null);
+        IEnumerable<object> GetValues(DateTime? from = null, DateTime? to = null);
 
         IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null);
 
@@ -22,21 +22,19 @@ namespace StreamRepository
         void Reset();
     }
 
-    public class Event
-    {
-        //public int Id { get; set; }
-        public DateTime Timestamp { get; private set; }
-        public double Value { get; private set; }
-        public int ImportId { get; private set; }
 
-        public Event(DateTime timestamp, double value, int importId)
-        {
-            Timestamp = timestamp;
-            Value = value;
-            ImportId = importId;
-        }
+    public interface IBuildStuff
+    {
+        object Deserialize(BinaryReader reader);
+        void Serialize(object obj, BinaryWriter writer);
+
+        int SizeInBytes();
     }
 
+    public interface ICanBeSharded
+    {
+        DateTime Timestamp { get; }
+    }
  
 
 

@@ -18,26 +18,38 @@ namespace ImportOnEnergy
         static void Main(string[] args)
         {
             /*---------------     FS -------------*/
-            //var filePath = @"e:\temp\Amadori";
-            //var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() });
-            //Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
+            var filePath = @"c:\temp\Amadori";
+            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
+            Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
 
             /*---------------  AZURE  -------------*/
-            var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "phyi70b6RgGXJYJscDy2kuQiJrPpdON5p3IRezUKpOYWEf+gHmEvbCSjNOYZI0FfosqjzSQeHPQlxLQTTllGVg=="), true);
-            var tableClient = azureAccount.CreateCloudTableClient();
-            var blobClient = azureAccount.CreateCloudBlobClient();
-            var container = blobClient.GetContainerReference("imola-inputvalues");
-            container.CreateIfNotExists();
-            var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() });
-            Account account = new AzureBlobAccount(container, bf);
+            //var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "phyi70b6RgGXJYJscDy2kuQiJrPpdON5p3IRezUKpOYWEf+gHmEvbCSjNOYZI0FfosqjzSQeHPQlxLQTTllGVg=="), true);
+            //var tableClient = azureAccount.CreateCloudTableClient();
+            //var blobClient = azureAccount.CreateCloudBlobClient();
+            //var container = blobClient.GetContainerReference("test");
+            //container.CreateIfNotExists();
+            //var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() }, new EventBuilder());
+            //Account account = new AzureBlobAccount(container, bf);
 
-            //TestImportedData(account);
             RunImport(account);
+            TestImportedData(account);
         }
+
+        public static void WriteTest(Account account)
+        {
+            var repository = account.BuildRepository("t1");
+            var evnts = new List<Event> 
+            {
+                new Event(DateTime.Now, 1, 1)
+            };
+            repository.AppendValues(evnts).Wait();
+        }
+
         public static void TestImportedData(Account account)
         {
             account.Read_Streams();
         }
+
         public static void RunImport(Account account)
         {
             account.Reset();
@@ -78,33 +90,31 @@ namespace ImportOnEnergy
                 con.Open();
                 ids = GetStreamIds(con).OrderBy(d => d).ToList();
             }
-            //var po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
-            //Parallel.ForEach(ids, po, id => 
-            //{
-            //    var sw = Stopwatch.StartNew();
-            //    ImportStream(id);
-            //    sw.Stop();
-            //    ImportedStreams++;
-
-            //    Console.WriteLine("Imported stream {0} in {1}", id, sw.Elapsed);
-            //});
-            foreach (var id in ids)
+            var po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+            Parallel.ForEach(ids, po, id =>
             {
                 var sw = Stopwatch.StartNew();
-
                 TryImportStream(id);
                 sw.Stop();
                 ImportedStreams++;
 
-                //Console.WriteLine("Imported stream {0} in {1}", id, sw.Elapsed);
-
                 Console.WriteLine(" Done in {0}", sw.Elapsed);
-            }
+            });
+            //foreach (var id in ids)
+            //{
+            //    var sw = Stopwatch.StartNew();
+
+            //    TryImportStream(id);
+            //    sw.Stop();
+            //    ImportedStreams++;
+
+            //    Console.WriteLine(" Done in {0}", sw.Elapsed);
+            //}
         }
         void TryImportStream(int id)
         {
             Repository repository = null;
-            var events = Enumerable.Empty<Event>();
+            var events = Enumerable.Empty<InputValue>();
             while(true)
             {
                 try
@@ -121,7 +131,6 @@ namespace ImportOnEnergy
                 {
                     Console.WriteLine("Error reading Stram {0}  ", id);
                     Console.WriteLine("{0} - {1}", ex.Message, ex.StackTrace);
-                    //Console.WriteLine("Retri")
                 }
             }
 
@@ -131,7 +140,6 @@ namespace ImportOnEnergy
                 {
                     repository = _account.BuildRepository(id + "");
                     repository.AppendValues(events).Wait();
-                   // Console.WriteLine(" Done", id);
                     break;
                 }
                 catch
@@ -141,19 +149,19 @@ namespace ImportOnEnergy
             }
         }
 
-        public IEnumerable<Event> LoadEventsForStream(int id, IDbConnection con)
+        public IEnumerable<InputValue> LoadEventsForStream(int id, IDbConnection con)
         {
             string query = @"SELECT Id, Value, StreamId, ObsolescenceEventId, UTCFrom, IsDeletedValue, ImportEventId, UTCTo from InputValue
                     WHERE StreamId = @StreamId";
 
             var parameters = new[] { Tuple.Create<string, object>("StreamId", id) };
 
-            var result = new List<Event>();
+            var result = new List<InputValue>();
             using (var cmd = Prepare(con, query, parameters))
             using (var reader = cmd.ExecuteReader())
                 while (reader.Read())
                 {
-                    var ev = reader.ToEvent();
+                    var ev = reader.ToInputValue();
                     result.Add(ev);
                 }
             return result;
@@ -194,12 +202,20 @@ namespace ImportOnEnergy
     {
         public static InputValue ToInputValue(this IDataReader reader)
         {
+            double value = 0;
+            if (reader.IsDBNull(1) == false)
+                value = reader.GetDouble(1);
+
+            long obso = 0;
+            if (reader.IsDBNull(3) == false)
+                value = reader.GetInt32(3);
+
             return new InputValue
             {
                 Id = reader.GetInt64(0),
-                Value = reader.GetDouble(1),
+                Value = value,
                 StreamId = reader.GetInt32(2),
-                ObsolescenceEventId = reader.GetInt32(3),
+                ObsolescenceEventId = obso,
                 UTCFrom = reader.GetDateTime(4),
                 IsDeletedValue = reader.GetBoolean(5),
                 ImportEventId = reader.GetInt64(6),
@@ -215,10 +231,45 @@ namespace ImportOnEnergy
 
             return new Event(reader.GetDateTime(7), value, (int)reader.GetInt64(6));
         }
+    }
+
+    public class InputValueBuilder : IBuildStuff
+    {
+        public object Deserialize(System.IO.BinaryReader reader)
+        {
+            return new InputValue 
+            {
+                Id = reader.ReadInt64(),
+                Value = reader.ReadInt64(),
+                UTCFrom = DateTime.FromBinary(reader.ReadInt64()),
+                UTCTo = DateTime.FromBinary(reader.ReadInt64()),
+                IsDeletedValue = reader.ReadBoolean(),
+                ImportEventId = reader.ReadInt64(),
+                ObsolescenceEventId = reader.ReadInt64(),
+            };
+        }
+
+        public void Serialize(object obj, System.IO.BinaryWriter writer)
+        {
+            var iv = (InputValue)obj;
+
+            writer.Write(iv.Id);
+            writer.Write(iv.Value);
+            writer.Write(iv.UTCFrom.ToBinary());
+            writer.Write(iv.UTCTo.Ticks);
+            writer.Write(iv.IsDeletedValue);
+            writer.Write(iv.ImportEventId);
+            writer.Write(iv.ObsolescenceEventId);
+        }
+
+        public int SizeInBytes()
+        {
+            return 8 + 8 + 8 + 8 + 1 + 8 + 8;
+        }
 
     }
 
-    public class InputValue
+    public class InputValue : ICanBeSharded
     {
         public long Id { get; set; }
         public double Value { get; set; }
@@ -228,5 +279,11 @@ namespace ImportOnEnergy
         public bool IsDeletedValue { get; set; }
         public long ImportEventId { get; set; }
         public long ObsolescenceEventId { get; set; }
+
+        public DateTime Timestamp
+        {
+            get { return UTCTo; }
+        }
     }
+
 }

@@ -14,9 +14,12 @@ namespace StreamRepository.Azure
         public static readonly string Sharding = "sharding-";
 
         IEnumerable<AzureBlobShardingStrategy> _strategies;
-        public AzureBlobFactory(IEnumerable<AzureBlobShardingStrategy> strategies)
+        IBuildStuff _builder;
+
+        public AzureBlobFactory(IEnumerable<AzureBlobShardingStrategy> strategies, IBuildStuff builder)
         {
             _strategies = strategies;
+            _builder = builder;
         }
 
 
@@ -41,7 +44,7 @@ namespace StreamRepository.Azure
                 sharding = BuildShardingStrategy(id);
             }
 
-            return new AzureBlobRepository(directory, sharding);
+            return new AzureBlobRepository(directory, sharding, _builder);
         }
 
         string Get_Factory_Blob(CloudBlobDirectory directory, string factoryId)

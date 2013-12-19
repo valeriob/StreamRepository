@@ -34,7 +34,7 @@ namespace Stress
 
             /*---------------     FS -------------*/
             var filePath = @"c:\temp\Amadori";
-            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() });
+            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new EventBuilder());
             Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
 
             /*---------------  AZURE  -------------*/

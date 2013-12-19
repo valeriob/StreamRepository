@@ -167,6 +167,7 @@ namespace StreamRepository.Azure
             return new PreparedPages
             {
                 Position = position,
+                CurrentPosition = currentPosition,
                 Pages = bufferedPages,
                 LastPage = lastPage
             };
@@ -189,18 +190,6 @@ namespace StreamRepository.Azure
         }
 
 
-        public IEnumerable<RecordValue> Read_Values()
-        {
-            using (var stream = new BufferPoolStream(new BufferPool()))
-            {
-                _blob.DownloadRangeToStream(stream, 0, _commitPosition.ToLinearAddress());
-                stream.Seek(0, SeekOrigin.Begin);
-
-                while (stream.Position < _commitPosition.ToLinearAddress())
-                    yield return FramedValue.Deserialize(stream, stream.Position);
-            }
-        }
-
         public async Task<Stream> DownloadValuesAsync()
         {
             var stream = new BufferPoolStream(new BufferPool());
@@ -209,25 +198,12 @@ namespace StreamRepository.Azure
             
             stream.Seek(0, SeekOrigin.Begin);
 
+            var sj = new StreamJoiner();
+            sj.Append(stream, 0, _commitPosition.ToLinearAddress());
+            return sj;
             return stream;
         }
 
-        public IEnumerable<byte[]> Read_Raw_Values()
-        {
-            var pool = new BufferPool();
-            using (var stream = new BufferPoolStream(pool))
-            {
-                _blob.DownloadRangeToStream(stream, 0, _commitPosition.ToLinearAddress());
-                stream.Seek(0, SeekOrigin.Begin);
-
-                while (stream.Position < _commitPosition.ToLinearAddress())
-                {
-                    var data = new byte[FramedValue.SizeInBytes()];
-                    stream.Read(data, 0, data.Length);
-                    yield return data;
-                }
-            }
-        }
 
         public IEnumerable<BufferedRecord> Read_Raw_Values2()
         {
@@ -319,12 +295,13 @@ namespace StreamRepository.Azure
         class PreparedPages
         {
             public int Position { get; set; }
+            public int CurrentPosition { get; set; }
             public StreamJoiner Pages { get; set; }
             public Page LastPage { get; set; }
 
             public long NewLength()
             {
-                return Position + Pages.Length;
+                return CurrentPosition;// Position + Pages.Length;
             }
         }
     }

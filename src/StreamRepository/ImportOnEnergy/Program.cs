@@ -208,7 +208,7 @@ namespace ImportOnEnergy
 
             long obso = 0;
             if (reader.IsDBNull(3) == false)
-                value = reader.GetInt32(3);
+                value = reader.GetInt64(3);
 
             return new InputValue
             {

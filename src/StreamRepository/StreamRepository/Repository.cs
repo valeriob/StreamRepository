@@ -13,9 +13,9 @@ namespace StreamRepository
 
         IEnumerable<object> GetValues(DateTime? from = null, DateTime? to = null);
 
-        IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null);
+        IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null);
 
-        void Hint_Sampling_Period(int samplingPeriodInSeconds);
+        void HintSamplingPeriod(int samplingPeriodInSeconds);
 
         //void Mark_Value_As_Obsolete(RecordValue value);
 
@@ -28,12 +28,13 @@ namespace StreamRepository
         object Deserialize(BinaryReader reader);
         void Serialize(object obj, BinaryWriter writer);
 
-        int SizeInBytes();
+        int SingleElementSizeInBytes();
     }
 
     public interface ICanBeSharded
     {
         DateTime Timestamp { get; }
+        double Value { get; }
     }
  
 

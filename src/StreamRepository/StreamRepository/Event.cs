@@ -21,12 +21,12 @@ namespace StreamRepository
         public void Serialize(object obj, BinaryWriter writer)
         {
             var evnt = (Event)obj;
-            writer.Write(evnt.Timestamp.Ticks);
+            writer.Write(evnt.Timestamp.ToBinary());
             writer.Write(evnt.Value);
             writer.Write(evnt.ImportId);
         }
 
-        public int SizeInBytes()
+        public int SingleElementSizeInBytes()
         {
             return 8 + 8 + 4;
         }

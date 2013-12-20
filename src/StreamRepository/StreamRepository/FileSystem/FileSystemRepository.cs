@@ -30,89 +30,86 @@ namespace StreamRepository.FileSystem
 
         public async Task AppendValues(IEnumerable<ICanBeSharded> values)
         {
-            foreach (var shard in _sharding.Shard(values) )
+            foreach (var shard in _sharding.Shard(values))
             {
                 var group = shard.GetValues();
                 var name = shard.GetName();
                 var header = ReadHeader(name);
+                DateTime lastEventTimestamp = header.LastEventTimestamp;
+                ICanBeSharded lastEvent = null;
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
                     var tail = header.Index;
 
-                    //using (var buffer = new BufferPoolStream(new BufferPool()))
-                    using(var buffer = new MemoryStream())
+                    using (var buffer = CreateMemoryStream())
                     {
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
                             foreach (var value in group)
                             {
                                 _builder.Serialize(value, writer);
-                                //var fv = new FramedValue(value.Item1, value.Item2, value.Item3);
-                                //fv.Serialize(writer);
-                                //FramedValue.Serialize(value.Timestamp, value.Value, value.ImportId, writer);
+                                if(value.Timestamp > lastEventTimestamp)
+                                {
+                                    lastEvent = value;
+                                    lastEventTimestamp = value.Timestamp;
+                                }
                             }
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
-                        int writtenBytes = group.Count() * _builder.SizeInBytes();
+                        int writtenBytes = group.Count() * _builder.SingleElementSizeInBytes();
                         await buffer.CopyToAsync(stream);
                         stream.Flush();
 
                         tail = tail + writtenBytes;
                     }
 
-                    header.Index = tail;
-                    header.Timestamp = DateTime.Now;
-                   
+                    header.Update(_builder, lastEvent, tail);
                 }
                 await WriteHeader(header, name);
             }
         }
 
-        public void Hint_Sampling_Period(int samplingPeriodInSeconds)
-        {
-            // TODO
-            //using (var file = Get_Year_With_Caching(year).OpenWrite())
-            //{
-            //    var size = FramedValue.SizeInBytes() * samples;
-            //    file.SetLength(size);
-            //}
-        }
-
         public IEnumerable<object> GetValues(DateTime? from, DateTime? to)
         {
-            var files = _directory.GetFiles();
-
-            foreach (var shard in _sharding.GetShards(files, from, to))
+            foreach (var shard in _sharding.GetShards(_directory.GetFiles(), from, to))
             {
-                using (var file = Open_Stream_For_Reading(shard.GetName()))
-                {
-                    //StreamHeader header = null;
-                    var reader = new BinaryReader(file);
-                    StreamHeader header = StreamHeader.Deserialize(reader);
+                var shardvalues = FetchShard(shard.GetName()).OrderBy(d => d.Timestamp);
 
-                    file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
-                    reader = new BinaryReader(file);
-                        while (file.Position < header.Index)
-                            yield return _builder.Deserialize(reader);
-                }
+                foreach (var v in shardvalues)
+                    if (v.Timestamp.Between(from, to))
+                        yield return v;
             }
         }
 
-        public IEnumerable<byte[]> Get_Raw_Values(DateTime? from = null, DateTime? to = null)
+        IEnumerable<ICanBeSharded> FetchShard(string shardName)
+        {
+            using (var file = Open_Stream_For_Reading(shardName))
+            {
+                var reader = new BinaryReader(file);
+                var header = StreamHeader.Deserialize(reader);
+
+                file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
+                reader = new BinaryReader(file);
+                while (file.Position < header.Index)
+                    yield return (ICanBeSharded)_builder.Deserialize(reader);
+            }
+        }
+
+
+        public IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null)
         {
             var files = _directory.GetFiles();
             foreach (var shard in _sharding.GetShards(files, from, to))
             {
                 using (var file = Open_Stream_For_Reading(shard.GetName()))
                 {
-                    //StreamHeader header = null;
                     var reader = new BinaryReader(file);
-                    StreamHeader header = StreamHeader.Deserialize(reader);
+                    var header = StreamHeader.Deserialize(reader);
 
                     file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
                     while (file.Position < header.Index)
                     {
-                        var data = new byte[_builder.SizeInBytes()];
+                        var data = new byte[_builder.SingleElementSizeInBytes()];
                         file.Read(data, 0, data.Length);
                         yield return data;
                     }
@@ -139,7 +136,7 @@ namespace StreamRepository.FileSystem
 
         async Task WriteHeader(StreamHeader header, string name)
         {
-            using (var buffer = new BufferPoolStream(new BufferPool()))
+            using (var buffer = CreateMemoryStream())
             {
                 using (var writer = new BinaryWriter(buffer, Encoding.UTF8, true))
                 {
@@ -165,7 +162,7 @@ namespace StreamRepository.FileSystem
         Stream Open_Stream_For_Writing(string name)
         {
             return new FileStream(Get_FileInfo_With_Caching(name).FullName, FileMode.Open, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough | FileOptions.SequentialScan);
-           // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
+            // return new FileStream_With_Hard_Flush(Get_Year_With_Caching(year).FullName, FileMode.Open);
             return Get_FileInfo_With_Caching(name).Open(FileMode.Open);
         }
 
@@ -204,7 +201,22 @@ namespace StreamRepository.FileSystem
             return file;
         }
 
+        Stream CreateMemoryStream()
+        {
+            //return new BufferPoolStream(new BufferPool());
+            return new MemoryStream();
+        }
 
+
+        public void HintSamplingPeriod(int samplingPeriodInSeconds)
+        {
+            // TODO
+            //using (var file = Get_Year_With_Caching(year).OpenWrite())
+            //{
+            //    var size = FramedValue.SizeInBytes() * samples;
+            //    file.SetLength(size);
+            //}
+        }
 
         public void Reset()
         {

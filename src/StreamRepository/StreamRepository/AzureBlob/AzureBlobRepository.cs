@@ -34,15 +34,13 @@ namespace StreamRepository.Azure
             foreach (var shard in _sharding.Shard(values))
             {
                 var group = shard.GetValues();
-                //using (var stream = new BufferPoolStream(new BufferPool()))
-                using (var stream = new MemoryStream())
+                using (var stream = CreateMemoryStream())
                 {
                     using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
                         foreach (var value in group)
                             _builder.Serialize(value, writer);
-                    //new FramedValue(value.Timestamp, value.Value, value.ImportId).Serialize(writer);
 
-                    int writtenBytes = group.Count() * _builder.SizeInBytes();
+                    int writtenBytes = group.Count() * _builder.SingleElementSizeInBytes();
 
                     var blob = await OpenBlobAsync(shard.GetName());
                     stream.Seek(0, SeekOrigin.Begin);
@@ -51,38 +49,36 @@ namespace StreamRepository.Azure
             }
         }
 
+
         public IEnumerable<object> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
-                var name = shard.GetName();
+                var shardvalues = FetchShard(shard.GetName()).OrderBy(d => d.Timestamp);
 
-                var task = OpenBlobAsync(name);
-                task.Wait();
-
-                var a = task.Result.DownloadValuesAsync();
-                a.Wait();
-
-                var stream = a.Result;
-                using (var reader = new BinaryReader(stream))
-                    while (stream.Position != stream.Length)
-                    {
-                        yield return _builder.Deserialize(reader);
-                        //object value = null;
-                        //try
-                        //{
-                        //    _builder.Deserialize(reader);
-                        //}
-                        //catch (EndOfStreamException)
-                        //{
-                        //    break;
-                        //}
-                        //yield return value;
-                    }
+                foreach (var v in shardvalues)
+                    if (v.Timestamp.Between(from, to))
+                        yield return v;
             }
         }
 
-        public IEnumerable<byte[]> Get_Raw_Values(DateTime? from, DateTime? to)
+        IEnumerable<ICanBeSharded> FetchShard(string name)
+        {
+            var task = OpenBlobAsync(name);
+            task.Wait();
+
+            var a = task.Result.DownloadValuesAsync();
+            a.Wait();
+
+            var stream = a.Result;
+            using (var reader = new BinaryReader(stream))
+                while (stream.Position != stream.Length)
+                    yield return (ICanBeSharded)_builder.Deserialize(reader);
+        }
+
+
+
+        public IEnumerable<byte[]> GetRawValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
@@ -96,7 +92,7 @@ namespace StreamRepository.Azure
                 using (var reader = new BinaryReader(stream))
                     while (stream.Position != stream.Length)
                     {
-                        var data = new byte[_builder.SizeInBytes()];
+                        var data = new byte[_builder.SingleElementSizeInBytes()];
                         stream.Read(data, 0, data.Length);
                         yield return data;
                     }
@@ -105,7 +101,7 @@ namespace StreamRepository.Azure
 
 
 
-        public void Hint_Sampling_Period(int samplingPeriodInSeconds)
+        public void HintSamplingPeriod(int samplingPeriodInSeconds)
         {
             // TODO
             // OpenBlobFor(year).Ensure_There_Is_Space_For(samples * FramedValue.SizeInBytes());
@@ -126,6 +122,11 @@ namespace StreamRepository.Azure
         }
 
 
+        Stream CreateMemoryStream()
+        {
+            //return new BufferPoolStream(new BufferPool());
+            return new MemoryStream();
+        }
 
         public void Reset()
         {

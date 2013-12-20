@@ -18,21 +18,22 @@ namespace ImportOnEnergy
         static void Main(string[] args)
         {
             /*---------------     FS -------------*/
-            var filePath = @"c:\temp\Amadori";
-            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
-            Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
+            //var filePath = @"c:\temp\Amadori";
+            //var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
+            //Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
 
             /*---------------  AZURE  -------------*/
-            //var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "phyi70b6RgGXJYJscDy2kuQiJrPpdON5p3IRezUKpOYWEf+gHmEvbCSjNOYZI0FfosqjzSQeHPQlxLQTTllGVg=="), true);
-            //var tableClient = azureAccount.CreateCloudTableClient();
-            //var blobClient = azureAccount.CreateCloudBlobClient();
+            var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "phyi70b6RgGXJYJscDy2kuQiJrPpdON5p3IRezUKpOYWEf+gHmEvbCSjNOYZI0FfosqjzSQeHPQlxLQTTllGVg=="), true);
+            var tableClient = azureAccount.CreateCloudTableClient();
+            var blobClient = azureAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference("values-onimenergy");
             //var container = blobClient.GetContainerReference("test");
-            //container.CreateIfNotExists();
-            //var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() }, new EventBuilder());
-            //Account account = new AzureBlobAccount(container, bf);
+            container.CreateIfNotExists();
+            var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() }, new InputValueBuilder());
+            Account account = new AzureBlobAccount(container, bf);
 
-            RunImport(account);
-            TestImportedData(account);
+            //RunImport(account);
+            account.Read_Streams();
         }
 
         public static void WriteTest(Account account)
@@ -43,11 +44,6 @@ namespace ImportOnEnergy
                 new Event(DateTime.Now, 1, 1)
             };
             repository.AppendValues(evnts).Wait();
-        }
-
-        public static void TestImportedData(Account account)
-        {
-            account.Read_Streams();
         }
 
         public static void RunImport(Account account)
@@ -91,25 +87,25 @@ namespace ImportOnEnergy
                 ids = GetStreamIds(con).OrderBy(d => d).ToList();
             }
             var po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
-            Parallel.ForEach(ids, po, id =>
-            {
-                var sw = Stopwatch.StartNew();
-                TryImportStream(id);
-                sw.Stop();
-                ImportedStreams++;
-
-                Console.WriteLine(" Done in {0}", sw.Elapsed);
-            });
-            //foreach (var id in ids)
+            //Parallel.ForEach(ids, po, id =>
             //{
             //    var sw = Stopwatch.StartNew();
-
             //    TryImportStream(id);
             //    sw.Stop();
             //    ImportedStreams++;
 
             //    Console.WriteLine(" Done in {0}", sw.Elapsed);
-            //}
+            //});
+            foreach (var id in ids)
+            {
+                var sw = Stopwatch.StartNew();
+
+                TryImportStream(id);
+                sw.Stop();
+                ImportedStreams++;
+
+                Console.WriteLine(" Done in {0}", sw.Elapsed);
+            }
         }
         void TryImportStream(int id)
         {
@@ -256,13 +252,13 @@ namespace ImportOnEnergy
             writer.Write(iv.Id);
             writer.Write(iv.Value);
             writer.Write(iv.UTCFrom.ToBinary());
-            writer.Write(iv.UTCTo.Ticks);
+            writer.Write(iv.UTCTo.ToBinary());
             writer.Write(iv.IsDeletedValue);
             writer.Write(iv.ImportEventId);
             writer.Write(iv.ObsolescenceEventId);
         }
 
-        public int SizeInBytes()
+        public int SingleElementSizeInBytes()
         {
             return 8 + 8 + 8 + 8 + 1 + 8 + 8;
         }

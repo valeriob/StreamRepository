@@ -192,7 +192,7 @@ namespace StreamRepository.Azure
 
         public async Task<Stream> DownloadValuesAsync()
         {
-            var stream = new BufferPoolStream(new BufferPool());
+            var stream = CreateMemoryStream();
 
             await _blob.DownloadRangeToStreamAsync(stream, 0, _commitPosition.ToLinearAddress());
             
@@ -201,7 +201,6 @@ namespace StreamRepository.Azure
             var sj = new StreamJoiner();
             sj.Append(stream, 0, _commitPosition.ToLinearAddress());
             return sj;
-            return stream;
         }
 
 
@@ -291,6 +290,12 @@ namespace StreamRepository.Azure
             }
         }
 
+
+        Stream CreateMemoryStream()
+        {
+            //return new BufferPoolStream(new BufferPool());
+            return new MemoryStream();
+        }
 
         class PreparedPages
         {

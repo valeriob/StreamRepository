@@ -91,7 +91,7 @@ namespace Stress
                
 
                 watch = Stopwatch.StartNew();
-                var count = rep.Get_Raw_Values(new DateTime(2012, 1, 1)).Count();
+                var count = rep.GetRawValues(new DateTime(2012, 1, 1)).Count();
                 watch.Stop();
 
                 Console.WriteLine("Raw : " + watch.Elapsed);

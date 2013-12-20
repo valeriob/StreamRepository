@@ -23,14 +23,14 @@ namespace StreamRepository
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Timestamp.Ticks);
+            writer.Write(Timestamp.ToBinary());
             writer.Write(Value);
             writer.Write(ImportId);
         }
 
         public static void Serialize(DateTime timestamp, double value, int importId, BinaryWriter writer)
         {
-            writer.Write(timestamp.Ticks);
+            writer.Write(timestamp.ToBinary());
             writer.Write(value);
             writer.Write(importId);
         }

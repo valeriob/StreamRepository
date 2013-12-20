@@ -76,7 +76,7 @@ namespace StreamRepository
             batchSize = int.MaxValue;
             var batch = new List<Event>();
 
-            repository.Hint_Sampling_Period( samples);
+            repository.HintSamplingPeriod( samples);
             for (int i = 1; i < samples + 1; i++)
             {
                 batch.Add(new Event(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));

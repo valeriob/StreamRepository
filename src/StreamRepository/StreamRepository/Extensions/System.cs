@@ -12,5 +12,14 @@ namespace StreamRepository
         {
             return (T)Attribute.GetCustomAttribute(type, typeof(T));
         }
+
+        public static bool Between(this DateTime timestamp, DateTime? from, DateTime? to)
+        {
+             if (from == null && to == null)
+                return true;
+             return (from == null || from.Value <= timestamp) && (to == null || to.Value >= timestamp);
+        }
+
     }
+
 }

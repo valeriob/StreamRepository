@@ -17,8 +17,6 @@ namespace StreamRepository
 
         void HintSamplingPeriod(int samplingPeriodInSeconds);
 
-        //void Mark_Value_As_Obsolete(RecordValue value);
-
         void Reset();
     }
 

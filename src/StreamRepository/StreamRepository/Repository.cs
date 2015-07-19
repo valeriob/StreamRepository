@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface Repository
+    public interface Repository<T> where T : ITimeValue
     {
-        Task AppendValues(ICanBeSharded[] values);
+        Task AppendValues(T[] values);
 
-        IEnumerable<object> GetValues(DateTime? from = null, DateTime? to = null);
+        IEnumerable<T> GetValues(DateTime? from = null, DateTime? to = null);
 
         IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null);
 
@@ -31,7 +31,7 @@ namespace StreamRepository
         object Deserialize2(BinaryReader reader, int lenght);
     }
 
-    public interface ICanBeSharded
+    public interface ITimeValue
     {
         DateTime Timestamp { get; }
         double Value { get; }

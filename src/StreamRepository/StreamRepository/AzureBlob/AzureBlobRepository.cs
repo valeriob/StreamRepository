@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.Azure
 {
-    public class AzureBlobRepository : Repository
+    public class AzureBlobRepository<T> : Repository<T> where T : ITimeValue
     {
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
         Dictionary<string, AzurePageBlob> _blobsCache;
-        AzureBlobShardingStrategy _sharding;
+        AzureBlobShardingStrategy<T> _sharding;
         //Cache _cache;
         IBuildStuff _builder;
 
 
-        public AzureBlobRepository(CloudBlobDirectory directory, AzureBlobShardingStrategy sharding, IBuildStuff builder)
+        public AzureBlobRepository(CloudBlobDirectory directory, AzureBlobShardingStrategy<T> sharding, IBuildStuff builder)
         {
             _directory = directory;
             _sharding = sharding;
@@ -29,7 +29,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public async Task AppendValues(ICanBeSharded[] values)
+        public async Task AppendValues(T[] values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -50,7 +50,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public IEnumerable<object> GetValues(DateTime? from, DateTime? to)
+        public IEnumerable<T> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
@@ -58,11 +58,11 @@ namespace StreamRepository.Azure
 
                 foreach (var v in shardvalues)
                     if (v.Timestamp.Between(from, to))
-                        yield return v;
+                        yield return (T)v;
             }
         }
 
-        IEnumerable<ICanBeSharded> FetchShard(string name)
+        IEnumerable<ITimeValue> FetchShard(string name)
         {
             var task = OpenBlobAsync(name);
             task.Wait();
@@ -73,7 +73,7 @@ namespace StreamRepository.Azure
             var stream = a.Result;
             using (var reader = new BinaryReader(stream))
                 while (stream.Position != stream.Length)
-                    yield return (ICanBeSharded)_builder.Deserialize(reader);
+                    yield return (ITimeValue)_builder.Deserialize(reader);
         }
 
 

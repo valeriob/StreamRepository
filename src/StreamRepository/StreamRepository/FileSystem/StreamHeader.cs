@@ -52,7 +52,7 @@ namespace StreamRepository
             return 4 + 8 + 16 + 8 + 8;
         }
 
-        internal void Update(IBuildStuff _builder, ICanBeSharded lastEvent, int index)
+        internal void Update(IBuildStuff _builder, ITimeValue lastEvent, int index)
         {
             Index = index;
             Timestamp = DateTime.Now;

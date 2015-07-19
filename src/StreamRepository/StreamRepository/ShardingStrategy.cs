@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface ShardingStrategy
+    public interface ShardingStrategy<T> where T : ITimeValue
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values);
+        IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values);
 
         IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null);
     }
@@ -22,17 +22,17 @@ namespace StreamRepository
         string GetName();
     }
 
-    public interface ShardWithValues : Shard
+    public interface ShardWithValues<T> : Shard
     {
-        IEnumerable<ICanBeSharded> GetValues();
+        IEnumerable<T> GetValues();
     }
 
 
-    [Export(typeof(ShardingStrategy))]
+    [Export(typeof(ShardingStrategy<>))]
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]
-    public class NoShardingStrategy : ShardingStrategy
+    public class NoShardingStrategy<T> : ShardingStrategy<T> where T : ITimeValue
     {
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
+        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
         {
             yield return new NoGroup(values);
         }
@@ -41,16 +41,16 @@ namespace StreamRepository
             throw new NotImplementedException();
         }
 
-        public class NoGroup : ShardWithValues
+        public class NoGroup : ShardWithValues<T>
         {
-            IEnumerable<ICanBeSharded> _values;
+            IEnumerable<T> _values;
 
-            public NoGroup(IEnumerable<ICanBeSharded> values)
+            public NoGroup(IEnumerable<T> values)
             {
                 _values = values;
             }
 
-            public IEnumerable<ICanBeSharded> GetValues()
+            public IEnumerable<T> GetValues()
             {
                 return _values;
             }

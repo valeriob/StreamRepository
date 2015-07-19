@@ -10,12 +10,12 @@ namespace ImportOnEnergy
 {
     public class Importer
     {
-        Account _account;
+        Account<InputValue> _account;
         string _cs;
         public int ImportedStreams { get; private set; }
 
 
-        public Importer(Account account, string cs)
+        public Importer(Account<InputValue> account, string cs)
         {
             _account = account;
             _cs = cs;
@@ -53,7 +53,7 @@ namespace ImportOnEnergy
         }
         void TryImportStream(int id)
         {
-            Repository repository = null;
+            Repository<InputValue> repository = null;
             var events = Enumerable.Empty<InputValue>();
             while (true)
             {
@@ -79,7 +79,7 @@ namespace ImportOnEnergy
                 try
                 {
                     repository = _account.BuildRepository(id + "");
-                    repository.AppendValues(events.Cast<ICanBeSharded>().ToArray()).Wait();
+                    repository.AppendValues(events.ToArray()).Wait();
                     break;
                 }
                 catch

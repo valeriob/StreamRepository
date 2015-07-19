@@ -10,26 +10,26 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.Azure
 {
-    public interface AzureBlobShardingStrategy
+    public interface AzureBlobShardingStrategy<T> where T : ITimeValue
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values);
+        IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
 
     }
-    [Export(typeof(ShardingStrategy))]
+    [Export(typeof(ShardingStrategy<>))]
     [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
-    public class AzureBlobPerYearShardingStrategy : AzureBlobShardingStrategy
+    public class AzureBlobPerYearShardingStrategy<T> : AzureBlobShardingStrategy<T> where T : ITimeValue
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
+        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> allBlobs, DateTime? from = null, DateTime? to = null)
         {
-            var blobs = allBlobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)).ToList();
+            var blobs = allBlobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(Consts.Sharding)).ToList();
             var shards = new List<YearGroup>();
 
             foreach (var blob in blobs)
@@ -53,20 +53,20 @@ namespace StreamRepository.Azure
             return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
         }
 
-        public class YearGroup : ShardWithValues
+        public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            IEnumerable<ICanBeSharded> _values;
+            IEnumerable<T> _values;
             public int Year { get { return _year; } }
 
 
-            public YearGroup(int year, IEnumerable<ICanBeSharded> values)
+            public YearGroup(int year, IEnumerable<T> values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<ICanBeSharded> GetValues()
+            public IEnumerable<T> GetValues()
             {
                 return _values;
             }
@@ -78,19 +78,19 @@ namespace StreamRepository.Azure
         }
     }
 
-    [Export(typeof(ShardingStrategy))]
+    [Export(typeof(ShardingStrategy<>))]
     [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
-    public class AzureBlobPerMonthShardingStrategy : AzureBlobShardingStrategy
+    public class AzureBlobPerMonthShardingStrategy<T> : AzureBlobShardingStrategy<T> where T : ITimeValue
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
+        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null)
         {
-            foreach (var blob in blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(AzureBlobFactory.Sharding)))
+            foreach (var blob in blobs.Select(s => s.Uri.Segments.Last()).Where(s => !s.StartsWith(Consts.Sharding)))
             {
                 var tokens = blob.Split('-');
 
@@ -116,20 +116,20 @@ namespace StreamRepository.Azure
             return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
         }
 
-        public class MonthGroup : ShardWithValues
+        public class MonthGroup : ShardWithValues<T>
         {
             int _year;
             int _month;
-            IEnumerable<ICanBeSharded> _values;
+            IEnumerable<T> _values;
 
-            public MonthGroup(int year, int month, IEnumerable<ICanBeSharded> values)
+            public MonthGroup(int year, int month, IEnumerable<T> values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<ICanBeSharded> GetValues()
+            public IEnumerable<T> GetValues()
             {
                 return _values;
             }

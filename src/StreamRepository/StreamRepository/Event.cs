@@ -39,13 +39,13 @@ namespace StreamRepository
         }
     }
 
-    public class Event : ICanBeSharded
+    public struct Event : ITimeValue
     {
         public DateTime Timestamp { get; private set; }
         public double Value { get; private set; }
         public int ImportId { get; private set; }
 
-        public Event(DateTime timestamp, double value, int importId)
+        public Event(DateTime timestamp, double value, int importId) : this()
         {
             Timestamp = timestamp;
             Value = value;

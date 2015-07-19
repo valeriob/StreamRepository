@@ -19,8 +19,8 @@ namespace ImportOnEnergy
         {
             /*---------------     FS -------------*/
             var filePath = @"f:\temp\Amadori";
-            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
-            Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
+            var ff = new FileSystemFactory<InputValue>(new FileSystemShardingStrategy<InputValue>[] { new FileSystemPerYearShardingStrategy<InputValue>(), new FileSystemPerMonthShardingStrategy<InputValue>() }, new InputValueBuilder());
+            Account<InputValue> account = new FileSystemAccount<InputValue>(filePath, ff, new FileSystemPerYearShardingStrategy<InputValue>());
 
             /*---------------  AZURE  -------------*/
             //var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "SOKk3P1fokgf9RoxrL/SJ5SIapsMdx6X1vTj7KyB7iMvCp0fcW7qLb53+KjHTDecycf257c2tpCuK5O5OtqQkA=="), true);
@@ -35,17 +35,8 @@ namespace ImportOnEnergy
             account.Read_Streams();
         }
 
-        public static void WriteTest(Account account)
-        {
-            var repository = account.BuildRepository("t1");
-            var evnts = new List<Event> 
-            {
-                new Event(DateTime.Now, 1, 1)
-            };
-            repository.AppendValues(evnts.ToArray()).Wait();
-        }
 
-        public static void RunImport(Account account)
+        public static void RunImport(Account<InputValue> account)
         {
             account.Reset();
 

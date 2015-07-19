@@ -9,26 +9,26 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public interface FileSystemShardingStrategy
+    public interface FileSystemShardingStrategy<T> where T : ITimeValue
     {
-        IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values);
+        IEnumerable<ShardWithValues<T>> Shard(T[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
     }
 
-    [Export(typeof(ShardingStrategy))]
+    [Export(typeof(ShardingStrategy<>))]
     [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
-    public class FileSystemPerYearShardingStrategy : FileSystemShardingStrategy
+    public class FileSystemPerYearShardingStrategy<T> : FileSystemShardingStrategy<T> where T : ITimeValue
     {
 
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
+        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
         {
-            foreach (var file in files.Where(f=> !f.Name.StartsWith(FileSystemFactory.Sharding)))
+            foreach (var file in files.Where(f=> !f.Name.StartsWith(Consts.Sharding)))
             {
                 int year = int.Parse(file.Name);
 
@@ -48,18 +48,18 @@ namespace StreamRepository.FileSystem
             return (from == null || from.Value.Year < year) && (to == null || to.Value.Year > year);
         }
 
-        public class YearGroup : ShardWithValues
+        public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            IEnumerable<ICanBeSharded> _values;
+            IEnumerable<T> _values;
 
-            public YearGroup(int year, IEnumerable<ICanBeSharded> values)
+            public YearGroup(int year, IEnumerable<T> values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<ICanBeSharded> GetValues()
+            public IEnumerable<T> GetValues()
             {
                 return _values;
             }
@@ -71,11 +71,11 @@ namespace StreamRepository.FileSystem
         }
     }
 
-    [Export(typeof(ShardingStrategy))]
+    [Export(typeof(ShardingStrategy<>))]
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
-    public class FileSystemPerMonthShardingStrategy : FileSystemShardingStrategy
+    public class FileSystemPerMonthShardingStrategy<T> : FileSystemShardingStrategy<T> where T : ITimeValue
     {
-        public IEnumerable<ShardWithValues> Shard(IEnumerable<ICanBeSharded> values)
+        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
         }
@@ -108,20 +108,20 @@ namespace StreamRepository.FileSystem
             return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
         }
 
-        public class MonthGroup : ShardWithValues
+        public class MonthGroup : ShardWithValues<T>
         {
             int _year;
             int _month;
-            IEnumerable<ICanBeSharded> _values;
+            IEnumerable<T> _values;
 
-            public MonthGroup(int year, int month, IEnumerable<ICanBeSharded> values)
+            public MonthGroup(int year, int month, IEnumerable<T> values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<ICanBeSharded> GetValues()
+            public IEnumerable<T> GetValues()
             {
                 return _values;
             }

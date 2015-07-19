@@ -9,21 +9,21 @@ using EventStore.BufferManagement;
 
 namespace StreamRepository.Azure
 {
-    public class AzureBlobAccount : Account
+    public class AzureBlobAccount<T> : Account<T> where T: ITimeValue
     {
         CloudBlobContainer _container;
-        AzureBlobFactory _factory;
+        AzureBlobFactory<T> _factory;
 
-        public AzureBlobAccount(CloudBlobContainer container, AzureBlobFactory factory)
+        public AzureBlobAccount(CloudBlobContainer container, AzureBlobFactory<T> factory)
         {
             _container = container;
             _factory = factory;
         }
 
-        public override Repository BuildRepository(string streamName)
+        public override Repository<T> BuildRepository(string streamName)
         {
             var directory = _container.GetDirectoryReference(streamName);
-            var defaultSharding = new AzureBlobPerYearShardingStrategy();
+            var defaultSharding = new AzureBlobPerYearShardingStrategy<T>();
 
             return _factory.OperOrCreate(directory, defaultSharding);
         }

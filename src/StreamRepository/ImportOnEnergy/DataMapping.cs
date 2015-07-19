@@ -100,7 +100,7 @@ namespace ImportOnEnergy
         }
     }
 
-    public struct InputValue : ICanBeSharded
+    public struct InputValue : ITimeValue
     {
         public long Id { get; set; }
         public double Value { get; set; }

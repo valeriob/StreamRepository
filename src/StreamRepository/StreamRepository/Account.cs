@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public abstract class Account
+    public abstract class Account<T> where T : ITimeValue
     {
         public void Read_Streams()
         {
@@ -17,8 +17,8 @@ namespace StreamRepository
 
             var opt = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 
-            Parallel.ForEach(GetStreams(), opt, stream =>
-            //foreach (var stream in GetStreams())
+            //Parallel.ForEach(GetStreams(), opt, stream =>
+            foreach (var stream in GetStreams())
             {
                 streams++;
                 var repository = BuildRepository(stream);
@@ -28,14 +28,14 @@ namespace StreamRepository
                 var speed = values / watch.Elapsed.TotalSeconds;
                 Console.WriteLine("Completed {0} number {1} : {2:0} total of {3} ", stream, streams, speed, values);
             }
-            );
+            //);
 
             watch.Stop();
 
             Console.WriteLine("read {0} values in {1} streams in {2}", values, streams, watch.Elapsed);
         }
 
-        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds)
+        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds, Func<DateTime, double, int, T> buildEvent)
         {
             var options = new ParallelOptions
             {
@@ -44,7 +44,7 @@ namespace StreamRepository
             try
             {
                 for (int i = 0; i < streams; i++)
-                    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds);
+                    Write_Stream(Guid.NewGuid() + "", years, samplingPeriodInSeconds, buildEvent);
             }
             catch (AggregateException ex)
             {
@@ -59,15 +59,16 @@ namespace StreamRepository
             //});
         }
 
-        public void Write_Stream(string name, int years, int samplingPeriodInSeconds)
+        public void Write_Stream(string name, int years, int samplingPeriodInSeconds, Func<DateTime, double, int, T> buildEvent)
         {
             var repository = BuildRepository(name);
 
             for (int year = DateTime.Now.Year - years; year < DateTime.Now.Year; year++)
-                Write_Year(repository, year, samplingPeriodInSeconds);
+                Write_Year(repository, year, samplingPeriodInSeconds, buildEvent);
         }
 
-        public void Write_Year(Repository repository, int year, int samplingPeriodInSeconds)
+        public void Write_Year(Repository<T> repository, int year, int samplingPeriodInSeconds,
+            Func<DateTime, double, int,T> buildEvent)
         {
             var random = new Random();
             var since = new DateTime(year, 1, 1);
@@ -76,12 +77,13 @@ namespace StreamRepository
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             batchSize = int.MaxValue;
-            var batch = new List<Event>();
+            var batch = new List<T>();
 
             repository.HintSamplingPeriod( samples);
             for (int i = 1; i < samples + 1; i++)
             {
-                batch.Add(new Event(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
+                batch.Add(buildEvent(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
+               
 
                 if (i % batchSize == 0 && i != 1)
                 {
@@ -102,7 +104,7 @@ namespace StreamRepository
         
 
         public abstract void Reset();
-        public abstract Repository BuildRepository(string streamName);
+        public abstract Repository<T> BuildRepository(string streamName);
         public abstract IEnumerable<string> GetStreams();
     }
 

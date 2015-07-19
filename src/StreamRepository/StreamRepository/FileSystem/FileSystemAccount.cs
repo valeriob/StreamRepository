@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public class FileSystemAccount : Account
+    public class FileSystemAccount<T> : Account<T> where T : ITimeValue
     {
         DirectoryInfo _directory;
-        FileSystemFactory _factory;
-        FileSystemShardingStrategy _defaultStrategy;
+        FileSystemFactory<T> _factory;
+        FileSystemShardingStrategy<T> _defaultStrategy;
 
 
-        public FileSystemAccount(string directoryPath, FileSystemFactory factory, FileSystemShardingStrategy defaultStrategy )
+        public FileSystemAccount(string directoryPath, FileSystemFactory<T> factory, FileSystemShardingStrategy<T> defaultStrategy )
         {
             _factory = factory;
             _defaultStrategy = defaultStrategy;
@@ -25,7 +25,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public override Repository BuildRepository(string streamName)
+        public override Repository<T> BuildRepository(string streamName)
         {
             var directory = new DirectoryInfo(Path.Combine(_directory.FullName, streamName));
             if (!directory.Exists)

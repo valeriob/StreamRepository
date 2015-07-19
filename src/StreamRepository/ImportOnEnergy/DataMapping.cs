@@ -78,9 +78,29 @@ namespace ImportOnEnergy
             return 8 + 8 + 8 + 8 + 1 + 8 + 8;
         }
 
+
+
+        public object Deserialize2(System.IO.BinaryReader reader, int lenght)
+        {
+            var result = new InputValue[lenght];
+            for (int i = 0; i < lenght; i++ )
+            {
+                result[i] = new InputValue
+                {
+                    Id = reader.ReadInt64(),
+                    Value = reader.ReadInt64(),
+                    UTCFrom = DateTime.FromBinary(reader.ReadInt64()),
+                    UTCTo = DateTime.FromBinary(reader.ReadInt64()),
+                    IsDeletedValue = reader.ReadBoolean(),
+                    ImportEventId = reader.ReadInt64(),
+                    ObsolescenceEventId = reader.ReadInt64(),
+                };
+            }
+            return result;
+        }
     }
 
-    public class InputValue : ICanBeSharded
+    public struct InputValue : ICanBeSharded
     {
         public long Id { get; set; }
         public double Value { get; set; }

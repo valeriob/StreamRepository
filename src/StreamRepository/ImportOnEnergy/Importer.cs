@@ -79,7 +79,7 @@ namespace ImportOnEnergy
                 try
                 {
                     repository = _account.BuildRepository(id + "");
-                    repository.AppendValues(events).Wait();
+                    repository.AppendValues(events.Cast<ICanBeSharded>().ToArray()).Wait();
                     break;
                 }
                 catch
@@ -98,7 +98,7 @@ namespace ImportOnEnergy
 
             var result = new List<InputValue>();
             using (var cmd = Prepare(con, query, parameters))
-            using (var reader = cmd.ExecuteReader())
+            using (var reader = cmd.ExecuteReader(CommandBehavior.SingleResult))
                 while (reader.Read())
                 {
                     var ev = reader.ToInputValue();

@@ -28,7 +28,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public async Task AppendValues(IEnumerable<ICanBeSharded> values)
+        public async Task AppendValues(ICanBeSharded[] values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -90,8 +90,11 @@ namespace StreamRepository.FileSystem
 
                 file.Seek(StreamHeader.SizeInBytes(), SeekOrigin.Begin);
                 reader = new BinaryReader(file);
+                //var data = new ICanBeSharded[spots];
                 while (file.Position < header.Index)
                     yield return (ICanBeSharded)_builder.Deserialize(reader);
+                //int spots = (int)(file.Length - StreamHeader.SizeInBytes()) / _builder.SingleElementSizeInBytes();
+                //return (ICanBeSharded[])_builder.Deserialize2(reader, spots);
             }
         }
 

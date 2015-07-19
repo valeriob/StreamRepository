@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamRepository", "StreamRepository\StreamRepository.csproj", "{3A87F096-C124-468D-8D67-299EAA006EFF}"
 EndProject
@@ -57,5 +57,8 @@ Global
 		{ADF338BF-26A4-4851-BE1A-B47D8608B94E} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
 		{D33F9783-E012-40AC-9F39-B69FE8BCC0ED} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
 		{DFDB38AA-5739-4557-8B3D-EA7EA2C7FD6E} = {5780943D-CF95-42F8-9ACC-AA8CC5413A79}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

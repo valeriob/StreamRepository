@@ -17,7 +17,8 @@ namespace StreamRepository
 
             var opt = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 
-            foreach (var stream in GetStreams())
+            Parallel.ForEach(GetStreams(), opt, stream =>
+            //foreach (var stream in GetStreams())
             {
                 streams++;
                 var repository = BuildRepository(stream);
@@ -27,6 +28,7 @@ namespace StreamRepository
                 var speed = values / watch.Elapsed.TotalSeconds;
                 Console.WriteLine("Completed {0} number {1} : {2:0} total of {3} ", stream, streams, speed, values);
             }
+            );
 
             watch.Stop();
 
@@ -83,14 +85,14 @@ namespace StreamRepository
 
                 if (i % batchSize == 0 && i != 1)
                 {
-                    repository.AppendValues(batch).Wait();
+                    repository.AppendValues(batch.ToArray()).Wait();
                     batch.Clear();
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
             }
-            repository.AppendValues(batch).Wait();
+            repository.AppendValues(batch.ToArray()).Wait();
 
             watch.Stop();
 

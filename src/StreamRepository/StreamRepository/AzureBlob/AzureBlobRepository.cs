@@ -29,7 +29,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public async Task AppendValues(IEnumerable<ICanBeSharded> values)
+        public async Task AppendValues(ICanBeSharded[] values)
         {
             foreach (var shard in _sharding.Shard(values))
             {

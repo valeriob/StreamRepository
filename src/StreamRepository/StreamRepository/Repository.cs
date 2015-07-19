@@ -9,7 +9,7 @@ namespace StreamRepository
 {
     public interface Repository
     {
-        Task AppendValues(IEnumerable<ICanBeSharded> values);
+        Task AppendValues(ICanBeSharded[] values);
 
         IEnumerable<object> GetValues(DateTime? from = null, DateTime? to = null);
 
@@ -27,6 +27,8 @@ namespace StreamRepository
         void Serialize(object obj, BinaryWriter writer);
 
         int SingleElementSizeInBytes();
+
+        object Deserialize2(BinaryReader reader, int lenght);
     }
 
     public interface ICanBeSharded

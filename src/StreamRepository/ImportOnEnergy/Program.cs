@@ -18,19 +18,18 @@ namespace ImportOnEnergy
         static void Main(string[] args)
         {
             /*---------------     FS -------------*/
-            //var filePath = @"c:\temp\Amadori";
-            //var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
-            //Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
+            var filePath = @"f:\temp\Amadori";
+            var ff = new FileSystemFactory(new FileSystemShardingStrategy[] { new FileSystemPerYearShardingStrategy(), new FileSystemPerMonthShardingStrategy() }, new InputValueBuilder());
+            Account account = new FileSystemAccount(filePath, ff, new FileSystemPerYearShardingStrategy());
 
             /*---------------  AZURE  -------------*/
-            var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "phyi70b6RgGXJYJscDy2kuQiJrPpdON5p3IRezUKpOYWEf+gHmEvbCSjNOYZI0FfosqjzSQeHPQlxLQTTllGVg=="), true);
-            var tableClient = azureAccount.CreateCloudTableClient();
-            var blobClient = azureAccount.CreateCloudBlobClient();
-            var container = blobClient.GetContainerReference("values-onimenergy");
-            //var container = blobClient.GetContainerReference("test");
-            container.CreateIfNotExists();
-            var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() }, new InputValueBuilder());
-            Account account = new AzureBlobAccount(container, bf);
+            //var azureAccount = new CloudStorageAccount(new StorageCredentials("onenergy", "SOKk3P1fokgf9RoxrL/SJ5SIapsMdx6X1vTj7KyB7iMvCp0fcW7qLb53+KjHTDecycf257c2tpCuK5O5OtqQkA=="), true);
+            //var tableClient = azureAccount.CreateCloudTableClient();
+            //var blobClient = azureAccount.CreateCloudBlobClient();
+            //var container = blobClient.GetContainerReference("values-onimenergy");
+            //container.CreateIfNotExists();
+            //var bf = new AzureBlobFactory(new AzureBlobShardingStrategy[] { new AzureBlobPerYearShardingStrategy(), new AzureBlobPerMonthShardingStrategy() }, new InputValueBuilder());
+            //Account account = new AzureBlobAccount(container, bf);
 
             //RunImport(account);
             account.Read_Streams();
@@ -43,7 +42,7 @@ namespace ImportOnEnergy
             {
                 new Event(DateTime.Now, 1, 1)
             };
-            repository.AppendValues(evnts).Wait();
+            repository.AppendValues(evnts.ToArray()).Wait();
         }
 
         public static void RunImport(Account account)

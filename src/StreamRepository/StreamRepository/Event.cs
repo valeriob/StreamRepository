@@ -31,6 +31,12 @@ namespace StreamRepository
             return 8 + 8 + 4;
         }
 
+
+
+        public object Deserialize2(BinaryReader reader, int lenght)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Event : ICanBeSharded

@@ -24,7 +24,7 @@ namespace StreamRepository
 
     public interface ShardWithValues<T> : Shard
     {
-        IEnumerable<T> GetValues();
+        T[] GetValues();
     }
 
 
@@ -34,7 +34,7 @@ namespace StreamRepository
     {
         public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
         {
-            yield return new NoGroup(values);
+            yield return new NoGroup(values.ToArray());
         }
         public IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null)
         {
@@ -43,14 +43,14 @@ namespace StreamRepository
 
         public class NoGroup : ShardWithValues<T>
         {
-            IEnumerable<T> _values;
+            T[] _values;
 
-            public NoGroup(IEnumerable<T> values)
+            public NoGroup(T[] values)
             {
                 _values = values;
             }
 
-            public IEnumerable<T> GetValues()
+            public T[] GetValues()
             {
                 return _values;
             }

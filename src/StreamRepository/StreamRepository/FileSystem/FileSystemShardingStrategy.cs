@@ -23,7 +23,7 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
-            return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
+            return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
@@ -51,15 +51,15 @@ namespace StreamRepository.FileSystem
         public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            IEnumerable<T> _values;
+            T[] _values;
 
-            public YearGroup(int year, IEnumerable<T> values)
+            public YearGroup(int year, T[] values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<T> GetValues()
+            public T[] GetValues()
             {
                 return _values;
             }
@@ -77,7 +77,7 @@ namespace StreamRepository.FileSystem
     {
         public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
-            return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
+            return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
@@ -112,16 +112,16 @@ namespace StreamRepository.FileSystem
         {
             int _year;
             int _month;
-            IEnumerable<T> _values;
+            T[] _values;
 
-            public MonthGroup(int year, int month, IEnumerable<T> values)
+            public MonthGroup(int year, int month, T[] values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<T> GetValues()
+            public T[] GetValues()
             {
                 return _values;
             }

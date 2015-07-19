@@ -45,15 +45,18 @@ namespace StreamRepository.FileSystem
                     using (var buffer = CreateMemoryStream())
                     {
                         using (var writer = new BinaryWriter(buffer, Encoding.Default, true))
-                            foreach (var value in group)
+                        {
+                            for (int i = 0; i < group.Length; i++)
                             {
+                                var value = group[i];
                                 _builder.Serialize(value, writer);
-                                if(value.Timestamp > lastEventTimestamp)
+                                if (value.Timestamp > lastEventTimestamp)
                                 {
                                     lastEvent = value;
                                     lastEventTimestamp = value.Timestamp;
                                 }
                             }
+                        }
                         stream.Seek(tail, SeekOrigin.Begin);
                         buffer.Seek(0, SeekOrigin.Begin);
                         int writtenBytes = group.Count() * _builder.SingleElementSizeInBytes();

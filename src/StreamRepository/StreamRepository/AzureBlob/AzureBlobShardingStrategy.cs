@@ -12,7 +12,7 @@ namespace StreamRepository.Azure
 {
     public interface AzureBlobShardingStrategy<T> where T : ITimeValue
     {
-        IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values);
+        IEnumerable<ShardWithValues<T>> Shard(T[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
 
@@ -22,9 +22,9 @@ namespace StreamRepository.Azure
     public class AzureBlobPerYearShardingStrategy<T> : AzureBlobShardingStrategy<T> where T : ITimeValue
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
+        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
-            return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g));
+            return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> allBlobs, DateTime? from = null, DateTime? to = null)
@@ -56,17 +56,17 @@ namespace StreamRepository.Azure
         public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            IEnumerable<T> _values;
+            T[] _values;
             public int Year { get { return _year; } }
 
 
-            public YearGroup(int year, IEnumerable<T> values)
+            public YearGroup(int year, T[] values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public IEnumerable<T> GetValues()
+            public T[] GetValues()
             {
                 return _values;
             }
@@ -83,9 +83,9 @@ namespace StreamRepository.Azure
     public class AzureBlobPerMonthShardingStrategy<T> : AzureBlobShardingStrategy<T> where T : ITimeValue
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
+        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
         {
-            return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g));
+            return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }
 
         public IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null)
@@ -120,16 +120,16 @@ namespace StreamRepository.Azure
         {
             int _year;
             int _month;
-            IEnumerable<T> _values;
+            T[] _values;
 
-            public MonthGroup(int year, int month, IEnumerable<T> values)
+            public MonthGroup(int year, int month, T[] values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public IEnumerable<T> GetValues()
+            public T[] GetValues()
             {
                 return _values;
             }

@@ -39,13 +39,13 @@ namespace StreamRepository
         }
     }
 
-    public struct Event : ITimeValue
+    public class Event : ITimeValue
     {
         public DateTime Timestamp { get; private set; }
         public double Value { get; private set; }
         public int ImportId { get; private set; }
 
-        public Event(DateTime timestamp, double value, int importId) : this()
+        public Event(DateTime timestamp, double value, int importId) //:this()
         {
             Timestamp = timestamp;
             Value = value;

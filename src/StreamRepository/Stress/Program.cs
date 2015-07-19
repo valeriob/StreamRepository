@@ -66,20 +66,20 @@ namespace Stress
 
 
 
-            watch = Stopwatch.StartNew();
-            account.Reset();
-            account.Write_Streams(5, 5, OgniMinuto,(date, value, import) => new Event(date, value, import));
-            watch.Stop();
-            Console.WriteLine(watch.Elapsed);
+            //watch = Stopwatch.StartNew();
+            //account.Reset();
+            //account.Write_Streams(1, 1, OgniMinuto,(date, value, import) => new Event(date, value, import));
+            //watch.Stop();
+            //Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
             account.Read_Streams();
             watch.Stop();
             Console.WriteLine(watch.Elapsed);
 
-            Console.WriteLine("hit enter to loop reading");
-            Console.ReadLine();
-
+           // Console.WriteLine("hit enter to loop reading");
+           // Console.ReadLine();
+            return;
 
             var streams = account.GetStreams().ToArray();
             var random = new Random();

@@ -28,7 +28,7 @@ namespace StreamRepository
 
         int SingleElementSizeInBytes();
 
-        object Deserialize2(BinaryReader reader, int lenght);
+        //object Deserialize2(BinaryReader reader, int lenght);
     }
 
     public interface ITimeValue

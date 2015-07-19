@@ -76,25 +76,25 @@ namespace StreamRepository
             int batchSize = 10000;
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
-            batchSize = int.MaxValue;
-            var batch = new List<T>();
+            //batchSize = int.MaxValue;
+            var batch = new T[batchSize];
 
             repository.HintSamplingPeriod( samples);
-            for (int i = 1; i < samples + 1; i++)
+            for (int i = 0; i < samples; i++)
             {
-                batch.Add(buildEvent(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
-               
-
-                if (i % batchSize == 0 && i != 1)
+                if (i % batchSize == 0 && i != 0)
                 {
-                    repository.AppendValues(batch.ToArray()).Wait();
-                    batch.Clear();
+                    repository.AppendValues(batch).Wait();
+                    batch = new T[batchSize];
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
+
+                batch[i % batchSize] = (buildEvent(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
             }
-            repository.AppendValues(batch.ToArray()).Wait();
+            var asd = new ArraySegment<T>(batch, 0, samples % batchSize).ToArray();
+            repository.AppendValues(asd).Wait();
 
             watch.Stop();
 

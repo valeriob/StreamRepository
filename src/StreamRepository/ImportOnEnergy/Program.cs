@@ -1,7 +1,7 @@
 ﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using StreamRepository;
-using StreamRepository.Azure;
+using StreamRepository.Azure.Blob;
 using StreamRepository.FileSystem;
 using System;
 using System.Collections.Generic;

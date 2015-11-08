@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,10 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>StreamRepository</RootNamespace>
     <AssemblyName>StreamRepository</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,32 +33,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Data.Edm, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.Edm.5.6.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.OData.5.6.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.Services.Client, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.Services.Client.5.6.0\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.2.0.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\WindowsAzure.Storage.3.0.1.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Services.Client" />
-    <Reference Include="System.Spatial, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -66,12 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account.cs" />
-    <Compile Include="AzureBlob\AzureBlobAccount.cs" />
-    <Compile Include="AzureBlob\AzureBlobShardingStrategy.cs" />
-    <Compile Include="AzureBlob\AzureBlobFactory.cs" />
-    <Compile Include="AzureBlob\Cache.cs" />
-    <Compile Include="AzureBlob\Page.cs" />
-    <Compile Include="AzureBlob\Position.cs" />
     <Compile Include="CanReadValues.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="EventStore.BufferManagement\BufferManager.cs" />
@@ -79,26 +52,20 @@
     <Compile Include="EventStore.BufferManagement\BufferPoolStream.cs" />
     <Compile Include="EventStore.BufferManagement\UnableToAllocateBufferException.cs" />
     <Compile Include="EventStore.BufferManagement\UnableToCreateMemoryException.cs" />
-    <Compile Include="Extensions\AzureBlobStorageExtensions.cs" />
     <Compile Include="Extensions\System.cs" />
-    <Compile Include="FileSystem\FileSystemFactory.cs" />
-    <Compile Include="FileSystem\FileSystemShardingStrategy.cs" />
     <Compile Include="FileSystem\FileStream.cs" />
     <Compile Include="FileSystem\FileSystemAccount.cs" />
-    <Compile Include="AzureBlob\AzureBlobRepository.cs" />
-    <Compile Include="AzureBlob\PageBlobState.cs" />
+    <Compile Include="FileSystem\FileSystemFactory.cs" />
     <Compile Include="FileSystem\FileSystemRepository.cs" />
+    <Compile Include="FileSystem\FileSystemShardingStrategy.cs" />
+    <Compile Include="FileSystem\StreamHeader.cs" />
     <Compile Include="FramedValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordValue.cs" />
     <Compile Include="Repository.cs" />
     <Compile Include="ShardingStrategy.cs" />
-    <Compile Include="FileSystem\StreamHeader.cs" />
     <Compile Include="Common\StreamJoiner.cs" />
     <Compile Include="Common\StreamSegment.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using StreamRepository;
 using StreamRepository.FileSystem;
-using StreamRepository.Azure;
+using StreamRepository.Azure.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Stress

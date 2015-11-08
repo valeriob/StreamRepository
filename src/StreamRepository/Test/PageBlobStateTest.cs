@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
-using StreamRepository.Azure;
+using StreamRepository.Azure.Blob;
 using System.IO;
 
 namespace Test

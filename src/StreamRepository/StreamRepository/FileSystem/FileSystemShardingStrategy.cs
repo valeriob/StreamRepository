@@ -13,8 +13,9 @@ namespace StreamRepository.FileSystem
     {
         IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
 
-        IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
+        IEnumerable<FileInfo> FilterFiles(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
     }
+
 
     [Export(typeof(ShardingStrategy<>))]
     [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
@@ -26,14 +27,15 @@ namespace StreamRepository.FileSystem
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
 
-        public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
+        public IEnumerable<FileInfo> FilterFiles(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
         {
             foreach (var file in files.Where(f=> !f.Name.StartsWith(Consts.Sharding)))
             {
                 int year = int.Parse(file.Name);
 
                 if (Shard_Is_In_Between(from, to, year))
-                    yield return new YearGroup(year, null);
+                    yield return file;
+                    //yield return new YearGroup(year, null);
             }
         }
 
@@ -80,7 +82,7 @@ namespace StreamRepository.FileSystem
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }
 
-        public IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
+        public IEnumerable<FileInfo> FilterFiles(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null)
         {
             foreach (var file in files)
             {
@@ -92,7 +94,8 @@ namespace StreamRepository.FileSystem
                 int month = int.Parse(tokens[1]);
 
                 if (Shard_Is_In_Between(from, to, year, month))
-                    yield return new MonthGroup(year, month, null);
+                    yield return file;
+                    //yield return new MonthGroup(year, month, null);
             }
         }
 

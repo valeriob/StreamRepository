@@ -74,9 +74,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<TimeValue<T>> GetValues(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetShards(_directory.GetFiles(), from, to))
+            foreach (var files in _sharding.FilterFiles(_directory.GetFiles(), from, to))
             {
-                var shardvalues = FetchShard(shard.GetName()).OrderBy(d => d.Timestamp);
+                var shardvalues = FetchShard(files.FullName).OrderBy(d => d.Timestamp);
 
                 foreach (var v in shardvalues)
                     if (v.Timestamp.Between(from, to))
@@ -85,9 +85,9 @@ namespace StreamRepository.FileSystem
         }
         public IEnumerable<LazyTimeValue<T>> GetLazyValues(DateTime? from, DateTime? to)
         {
-            foreach (var shard in _sharding.GetShards(_directory.GetFiles(), from, to))
+            foreach (var files in _sharding.FilterFiles(_directory.GetFiles(), from, to))
             {
-                var shardvalues = FetchShardLazy(shard.GetName()).OrderBy(d => d.Timestamp);
+                var shardvalues = FetchShardLazy(files.FullName).OrderBy(d => d.Timestamp);
 
                 foreach (var v in shardvalues)
                     if (v.Timestamp.Between(from, to))
@@ -124,10 +124,9 @@ namespace StreamRepository.FileSystem
 
         public IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null)
         {
-            var files = _directory.GetFiles();
-            foreach (var shard in _sharding.GetShards(files, from, to))
+            foreach (var files in _sharding.FilterFiles(_directory.GetFiles(), from, to))
             {
-                var values = GetRawShard(shard.GetName());
+                var values = GetRawShard(files.FullName);
                 foreach (var value in values)
                     yield return value;
             }

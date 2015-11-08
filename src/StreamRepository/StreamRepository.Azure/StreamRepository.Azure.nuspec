@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>StreamRepository</id>
+    <version>1.0.0-alpha</version>
+    <authors>SYSTEM</authors>
+    <owners>SYSTEM</owners>
+    <licenseUrl>http://example.com</licenseUrl>
+    <projectUrl>http://example.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Help storing and loading streams of events with time in azure blobs</description>
+    <releaseNotes />
+    <dependencies>
+      <dependency id="StreamRepository" version="1.0.0-alpha"  />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\StreamRepository.Azure.dll" target="lib\net451\" />
+  </files>
+</package>

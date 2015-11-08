@@ -42,7 +42,31 @@ namespace StreamRepository
             Value = value;
         }
     }
- 
+
+    public class LazyTimeValue<T>
+    {
+        public DateTime Timestamp { get; private set; }
+
+        byte[] _payload;
+        T _value;
+        ISerializeTimeValue<T> _serializer;
+        public T GetValue()
+        {
+            if(_value == null)
+            {
+                _value = _serializer.Deserialize(new BinaryReader(new MemoryStream(_payload))).Value;
+            }
+            return _value;
+        }
+
+        public LazyTimeValue(DateTime timestamp, byte[] payload, ISerializeTimeValue<T> serializer)
+        {
+            Timestamp = timestamp;
+            _payload = payload;
+            _serializer = serializer;
+        }
+    }
+
 
 
     public class FramedObsoleted 

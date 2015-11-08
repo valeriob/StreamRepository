@@ -19,6 +19,7 @@ namespace StreamRepository
             return new TimeValue<Event>(timestamp, evnt);
         }
 
+
         public void Serialize(TimeValue<Event> evnt, BinaryWriter writer)
         {
             writer.Write(evnt.Value.Timestamp.ToBinary());

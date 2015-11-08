@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public class FileSystemRepository<T> : Repository<T> where T : ITimeValue
+    public class FileSystemRepository<T> : Repository<T>
     {
         Dictionary<string, FileInfo> _fileCache;
         Func<int, string> _logFileName = year => string.Format("{0}.dat", year);
         Func<int, string> _logObsoleteFileName = year => string.Format("{0}.dat", year);
         DirectoryInfo _directory;
         FileSystemShardingStrategy<T> _sharding;
-        IBuildStuff _builder;
+        ISerializeTimeValue<T> _builder;
 
 
-        public FileSystemRepository(DirectoryInfo folder, FileSystemShardingStrategy<T> sharding, IBuildStuff builder)
+        public FileSystemRepository(DirectoryInfo folder, FileSystemShardingStrategy<T> sharding, ISerializeTimeValue<T> builder)
         {
             _sharding = sharding;
             _directory = folder;
@@ -28,7 +28,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public async Task AppendValues(T[] values)
+        public async Task AppendValues(TimeValue<T>[] values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -36,7 +36,7 @@ namespace StreamRepository.FileSystem
                 var name = shard.GetName();
                 var header = ReadHeader(name);
                 DateTime lastEventTimestamp = header.LastEventTimestamp;
-                ITimeValue lastEvent = null;
+                TimeValue<T> lastEvent = null;
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
@@ -66,13 +66,13 @@ namespace StreamRepository.FileSystem
                         tail = tail + writtenBytes;
                     }
 
-                    header.Update(_builder, lastEvent, tail);
+                    header.Update(lastEvent?.Timestamp, tail);
                 }
                 await WriteHeader(header, name);
             }
         }
 
-        public IEnumerable<T> GetValues(DateTime? from, DateTime? to)
+        public IEnumerable<TimeValue<T>> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.GetFiles(), from, to))
             {
@@ -80,11 +80,11 @@ namespace StreamRepository.FileSystem
 
                 foreach (var v in shardvalues)
                     if (v.Timestamp.Between(from, to))
-                        yield return (T)v;
+                        yield return v;
             }
         }
 
-        IEnumerable<ITimeValue> FetchShard(string shardName)
+        IEnumerable<TimeValue<T>> FetchShard(string shardName)
         {
             using (var file = Open_Stream_For_Reading(shardName))
             {
@@ -95,7 +95,7 @@ namespace StreamRepository.FileSystem
                 reader = new BinaryReader(file);
                 //var data = new ICanBeSharded[spots];
                 while (file.Position < header.Index)
-                    yield return (ITimeValue)_builder.Deserialize(reader);
+                    yield return _builder.Deserialize(reader);
                 //int spots = (int)(file.Length - StreamHeader.SizeInBytes()) / _builder.SingleElementSizeInBytes();
                 //return (ICanBeSharded[])_builder.Deserialize2(reader, spots);
             }
@@ -228,6 +228,8 @@ namespace StreamRepository.FileSystem
         {
             throw new NotImplementedException();
         }
+
+   
     }
 
 

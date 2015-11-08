@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public abstract class Account<T> where T : ITimeValue
+    public abstract class Account<T>
     {
         public void Read_Streams()
         {
@@ -35,7 +35,7 @@ namespace StreamRepository
             Console.WriteLine("read {0} values in {1} streams in {2}", values, streams, watch.Elapsed);
         }
 
-        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds, Func<DateTime, double, int, T> buildEvent)
+        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds, Func<DateTime, TimeValue<T>> buildEvent)
         {
             var options = new ParallelOptions
             {
@@ -59,7 +59,7 @@ namespace StreamRepository
             //});
         }
 
-        public void Write_Stream(string name, int years, int samplingPeriodInSeconds, Func<DateTime, double, int, T> buildEvent)
+        public void Write_Stream(string name, int years, int samplingPeriodInSeconds, Func<DateTime, TimeValue<T>> buildEvent)
         {
             var repository = BuildRepository(name);
 
@@ -68,7 +68,7 @@ namespace StreamRepository
         }
 
         public void Write_Year(Repository<T> repository, int year, int samplingPeriodInSeconds,
-            Func<DateTime, double, int,T> buildEvent)
+            Func<DateTime, TimeValue<T>> buildEvent)
         {
             var random = new Random();
             var since = new DateTime(year, 1, 1);
@@ -77,23 +77,23 @@ namespace StreamRepository
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             //batchSize = int.MaxValue;
-            var batch = new T[batchSize];
+            var batch = new TimeValue<T>[batchSize];
 
-            repository.HintSamplingPeriod( samples);
+            repository.HintSamplingPeriod(samples);
             for (int i = 0; i < samples; i++)
             {
                 if (i % batchSize == 0 && i != 0)
                 {
                     repository.AppendValues(batch).Wait();
-                    batch = new T[batchSize];
+                    batch = new TimeValue<T>[batchSize];
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
                 }
 
-                batch[i % batchSize] = (buildEvent(since.AddSeconds(samplingPeriodInSeconds), random.NextDouble(), (i / batchSize) + 1));
+                batch[i % batchSize] = buildEvent(since.AddSeconds(samplingPeriodInSeconds));
             }
-            var asd = new ArraySegment<T>(batch, 0, samples % batchSize).ToArray();
+            var asd = new ArraySegment<TimeValue<T>>(batch, 0, samples % batchSize).ToArray();
             repository.AppendValues(asd).Wait();
 
             watch.Stop();
@@ -101,11 +101,13 @@ namespace StreamRepository
             //Console.WriteLine("Written {2} : Elapses {0}, append/s {1}", watch.Elapsed, 525600 / watch.Elapsed.TotalSeconds, year);
         }
 
-        
+
 
         public abstract void Reset();
         public abstract Repository<T> BuildRepository(string streamName);
         public abstract IEnumerable<string> GetStreams();
     }
+
+
 
 }

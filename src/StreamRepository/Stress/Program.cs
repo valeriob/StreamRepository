@@ -24,6 +24,7 @@ namespace Stress
         static void Main(string[] args)
         {
             Stopwatch watch = null;
+            var random = new Random(DateTime.Now.Millisecond);
 
             //watch = Stopwatch.StartNew();
             //int count = 0;
@@ -66,11 +67,12 @@ namespace Stress
 
 
 
-            //watch = Stopwatch.StartNew();
-            //account.Reset();
-            //account.Write_Streams(1, 1, OgniMinuto,(date, value, import) => new Event(date, value, import));
-            //watch.Stop();
-            //Console.WriteLine(watch.Elapsed);
+            watch = Stopwatch.StartNew();
+            account.Reset();
+           
+            account.Write_Streams(1, 1, OgniMinuto, (date) => new TimeValue<Event>(date, new Event(date, random.NextDouble(), random.Next(100))));
+            watch.Stop();
+            Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
             account.Read_Streams();
@@ -82,7 +84,7 @@ namespace Stress
             return;
 
             var streams = account.GetStreams().ToArray();
-            var random = new Random();
+           
             var id = random.Next(streams.Length);
             var stream = streams[id];
             var rep = account.BuildRepository(stream);

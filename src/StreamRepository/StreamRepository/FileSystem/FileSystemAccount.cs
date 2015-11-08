@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public class FileSystemAccount<T> : Account<T> where T : ITimeValue
+    public class FileSystemAccount<T> : Account<T>
     {
         DirectoryInfo _directory;
         FileSystemFactory<T> _factory;

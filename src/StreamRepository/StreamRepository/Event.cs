@@ -7,23 +7,23 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public class EventBuilder : IBuildStuff
+    public class EventBuilder : ISerializeTimeValue<Event>
     {
-        public object Deserialize(BinaryReader reader)
+        public TimeValue<Event> Deserialize(BinaryReader reader)
         {
             var timestamp = DateTime.FromBinary(reader.ReadInt64());
             var value = reader.ReadDouble();
             var importId = reader.ReadInt32();
 
-            return new Event(timestamp, value, importId);
+            var evnt = new Event(timestamp, value, importId);
+            return new TimeValue<Event>(timestamp, evnt);
         }
 
-        public void Serialize(object obj, BinaryWriter writer)
+        public void Serialize(TimeValue<Event> evnt, BinaryWriter writer)
         {
-            var evnt = (Event)obj;
-            writer.Write(evnt.Timestamp.ToBinary());
-            writer.Write(evnt.Value);
-            writer.Write(evnt.ImportId);
+            writer.Write(evnt.Value.Timestamp.ToBinary());
+            writer.Write(evnt.Value.Value);
+            writer.Write(evnt.Value.ImportId);
         }
 
         public int SingleElementSizeInBytes()
@@ -39,7 +39,7 @@ namespace StreamRepository
         }
     }
 
-    public class Event : ITimeValue
+    public class Event
     {
         public DateTime Timestamp { get; private set; }
         public double Value { get; private set; }

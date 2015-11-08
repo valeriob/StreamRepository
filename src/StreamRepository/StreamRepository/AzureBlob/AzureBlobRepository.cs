@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.Azure
 {
-    public class AzureBlobRepository<T> : Repository<T> where T : ITimeValue
+    public class AzureBlobRepository<T> : Repository<T>
     {
         CloudBlobDirectory _directory;
         Func<int, string> _logFileName = year => string.Format("{0}", year);
         Dictionary<string, AzurePageBlob> _blobsCache;
         AzureBlobShardingStrategy<T> _sharding;
         //Cache _cache;
-        IBuildStuff _builder;
+        ISerializeTimeValue<T> _builder;
 
 
-        public AzureBlobRepository(CloudBlobDirectory directory, AzureBlobShardingStrategy<T> sharding, IBuildStuff builder)
+        public AzureBlobRepository(CloudBlobDirectory directory, AzureBlobShardingStrategy<T> sharding, ISerializeTimeValue<T> builder)
         {
             _directory = directory;
             _sharding = sharding;
@@ -29,7 +29,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public async Task AppendValues(T[] values)
+        public async Task AppendValues(TimeValue<T>[] values)
         {
             foreach (var shard in _sharding.Shard(values))
             {
@@ -50,7 +50,7 @@ namespace StreamRepository.Azure
         }
 
 
-        public IEnumerable<T> GetValues(DateTime? from, DateTime? to)
+        public IEnumerable<TimeValue<T>> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
@@ -58,11 +58,11 @@ namespace StreamRepository.Azure
 
                 foreach (var v in shardvalues)
                     if (v.Timestamp.Between(from, to))
-                        yield return (T)v;
+                        yield return v;
             }
         }
 
-        IEnumerable<ITimeValue> FetchShard(string name)
+        IEnumerable<TimeValue<T>> FetchShard(string name)
         {
             var task = OpenBlobAsync(name);
             task.Wait();
@@ -73,7 +73,7 @@ namespace StreamRepository.Azure
             var stream = a.Result;
             using (var reader = new BinaryReader(stream))
                 while (stream.Position != stream.Length)
-                    yield return (ITimeValue)_builder.Deserialize(reader);
+                    yield return _builder.Deserialize(reader);
         }
 
 

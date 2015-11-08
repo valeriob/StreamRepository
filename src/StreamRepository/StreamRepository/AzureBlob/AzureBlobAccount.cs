@@ -9,7 +9,7 @@ using EventStore.BufferManagement;
 
 namespace StreamRepository.Azure
 {
-    public class AzureBlobAccount<T> : Account<T> where T: ITimeValue
+    public class AzureBlobAccount<T> : Account<T>
     {
         CloudBlobContainer _container;
         AzureBlobFactory<T> _factory;

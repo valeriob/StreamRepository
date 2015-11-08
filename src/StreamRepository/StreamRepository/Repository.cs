@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface Repository<T> where T : ITimeValue
+    public interface Repository<T>
     {
-        Task AppendValues(T[] values);
+        Task AppendValues(TimeValue<T>[] values);
 
-        IEnumerable<T> GetValues(DateTime? from = null, DateTime? to = null);
+        IEnumerable<TimeValue<T>> GetValues(DateTime? from = null, DateTime? to = null);
 
         IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null);
 
@@ -21,20 +21,26 @@ namespace StreamRepository
     }
 
 
-    public interface IBuildStuff
+    public interface ISerializeTimeValue<T>
     {
-        object Deserialize(BinaryReader reader);
-        void Serialize(object obj, BinaryWriter writer);
+        TimeValue<T> Deserialize(BinaryReader reader);
+        void Serialize(TimeValue<T> obj, BinaryWriter writer);
 
         int SingleElementSizeInBytes();
 
         //object Deserialize2(BinaryReader reader, int lenght);
     }
 
-    public interface ITimeValue
+    public class TimeValue<T>
     {
-        DateTime Timestamp { get; }
-        double Value { get; }
+        public DateTime Timestamp { get; private set; }
+        public T Value { get; private set; }
+
+        public TimeValue(DateTime timestamp, T value)
+        {
+            Timestamp = timestamp;
+            Value = value;
+        }
     }
  
 

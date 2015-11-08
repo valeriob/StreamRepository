@@ -14,7 +14,7 @@ namespace StreamRepository
         public Guid ShardingStrategy { get; set; }
 
         public DateTime LastEventTimestamp { get; set; }
-        public double LastEventValue { get; set; }
+        //public double LastEventValue { get; set; }
 
 
         public void Serialize(BinaryWriter writer)
@@ -24,7 +24,7 @@ namespace StreamRepository
             writer.Write(ShardingStrategy.ToByteArray());
 
             writer.Write(LastEventTimestamp.ToBinary());
-            writer.Write(LastEventValue);
+            //writer.Write(LastEventValue);
         }
 
         public static StreamHeader Deserialize(BinaryReader reader)
@@ -39,7 +39,7 @@ namespace StreamRepository
             try
             {
                 header.LastEventTimestamp = DateTime.FromBinary(reader.ReadInt64());
-                header.LastEventValue = reader.ReadDouble();
+              //  header.LastEventValue = reader.ReadDouble();
 
             }
             catch { }
@@ -52,15 +52,15 @@ namespace StreamRepository
             return 4 + 8 + 16 + 8 + 8;
         }
 
-        internal void Update(IBuildStuff _builder, ITimeValue lastEvent, int index)
+        internal void Update(DateTime? lastEventTimestamp, int index)
         {
             Index = index;
             Timestamp = DateTime.Now;
 
-            if (lastEvent != null)
+            if (lastEventTimestamp != null)
             {
-                LastEventTimestamp = lastEvent.Timestamp;
-                LastEventValue = lastEvent.Value;
+                LastEventTimestamp = lastEventTimestamp.Value;
+
             }
         }
 

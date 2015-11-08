@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface ShardingStrategy<T> where T : ITimeValue
+    public interface ShardingStrategy<T> where T : TimeValue<T>
     {
-        IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values);
+        IEnumerable<ShardWithValues<T>> Shard(IEnumerable<TimeValue<T>> values);
 
         IEnumerable<Shard> GetShards(DateTime? from = null, DateTime? to = null);
     }
@@ -24,15 +24,15 @@ namespace StreamRepository
 
     public interface ShardWithValues<T> : Shard
     {
-        T[] GetValues();
+        TimeValue<T>[] GetValues();
     }
 
 
     [Export(typeof(ShardingStrategy<>))]
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]
-    public class NoShardingStrategy<T> : ShardingStrategy<T> where T : ITimeValue
+    public class NoShardingStrategy<T> : ShardingStrategy<T> where T : TimeValue<T>
     {
-        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<T> values)
+        public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<TimeValue<T>> values)
         {
             yield return new NoGroup(values.ToArray());
         }
@@ -43,14 +43,14 @@ namespace StreamRepository
 
         public class NoGroup : ShardWithValues<T>
         {
-            T[] _values;
+            TimeValue<T>[] _values;
 
-            public NoGroup(T[] values)
+            public NoGroup(TimeValue<T>[] values)
             {
                 _values = values;
             }
 
-            public T[] GetValues()
+            public TimeValue<T>[] GetValues()
             {
                 return _values;
             }

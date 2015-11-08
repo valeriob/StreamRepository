@@ -9,19 +9,19 @@ using System.Threading.Tasks;
 
 namespace StreamRepository.FileSystem
 {
-    public interface FileSystemShardingStrategy<T> where T : ITimeValue
+    public interface FileSystemShardingStrategy<T>
     {
-        IEnumerable<ShardWithValues<T>> Shard(T[] values);
+        IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
     }
 
     [Export(typeof(ShardingStrategy<>))]
     [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
-    public class FileSystemPerYearShardingStrategy<T> : FileSystemShardingStrategy<T> where T : ITimeValue
+    public class FileSystemPerYearShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
+        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
@@ -51,15 +51,15 @@ namespace StreamRepository.FileSystem
         public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            T[] _values;
+            TimeValue<T>[] _values;
 
-            public YearGroup(int year, T[] values)
+            public YearGroup(int year, TimeValue<T>[] values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public T[] GetValues()
+            public TimeValue<T>[] GetValues()
             {
                 return _values;
             }
@@ -73,9 +73,9 @@ namespace StreamRepository.FileSystem
 
     [Export(typeof(ShardingStrategy<>))]
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
-    public class FileSystemPerMonthShardingStrategy<T> : FileSystemShardingStrategy<T> where T : ITimeValue
+    public class FileSystemPerMonthShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
-        public IEnumerable<ShardWithValues<T>> Shard(T[] values)
+        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }
@@ -112,16 +112,16 @@ namespace StreamRepository.FileSystem
         {
             int _year;
             int _month;
-            T[] _values;
+            TimeValue<T>[] _values;
 
-            public MonthGroup(int year, int month, T[] values)
+            public MonthGroup(int year, int month, TimeValue<T>[] values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public T[] GetValues()
+            public TimeValue<T>[] GetValues()
             {
                 return _values;
             }

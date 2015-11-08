@@ -14,12 +14,12 @@ namespace StreamRepository.Azure
         public const string Sharding = "sharding-";
 
     }
-    public class AzureBlobFactory<T> where T : ITimeValue
+    public class AzureBlobFactory<T>
     {
         IEnumerable<AzureBlobShardingStrategy<T>> _strategies;
-        IBuildStuff _builder;
+        ISerializeTimeValue<T> _builder;
 
-        public AzureBlobFactory(IEnumerable<AzureBlobShardingStrategy<T>> strategies, IBuildStuff builder)
+        public AzureBlobFactory(IEnumerable<AzureBlobShardingStrategy<T>> strategies, ISerializeTimeValue<T> builder)
         {
             _strategies = strategies;
             _builder = builder;

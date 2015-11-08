@@ -14,14 +14,14 @@ namespace StreamRepository.FileSystem
         public const string Sharding = "sharding-";
     }
 
-    public class FileSystemFactory<T> where T : ITimeValue
+    public class FileSystemFactory<T>
     {
        
         //IEnumerable<FileSystemShardingStrategy> _strategies;
         Dictionary<string, FileSystemShardingStrategy<T>> _strategies;
-        IBuildStuff _builder;
+        ISerializeTimeValue<T> _builder;
 
-        public FileSystemFactory(IEnumerable<FileSystemShardingStrategy<T>> strategies, IBuildStuff builder)
+        public FileSystemFactory(IEnumerable<FileSystemShardingStrategy<T>> strategies, ISerializeTimeValue<T> builder)
         {
             _strategies = strategies.ToDictionary(d => GetId(d).ToString(), r=> r);
             _builder = builder;

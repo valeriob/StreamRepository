@@ -44,11 +44,11 @@ namespace ImportOnEnergy
         }
     }
 
-    public class InputValueBuilder : IBuildStuff
+    public class InputValueBuilder : ISerializeTimeValue<InputValue>
     {
-        public object Deserialize(System.IO.BinaryReader reader)
+        public TimeValue<InputValue> Deserialize(System.IO.BinaryReader reader)
         {
-            return new InputValue
+            var iv = new InputValue
             {
                 Id = reader.ReadInt64(),
                 Value = reader.ReadInt64(),
@@ -58,19 +58,18 @@ namespace ImportOnEnergy
                 ImportEventId = reader.ReadInt64(),
                 ObsolescenceEventId = reader.ReadInt64(),
             };
+            return new TimeValue<InputValue>(iv.UTCTo, iv);
         }
 
-        public void Serialize(object obj, System.IO.BinaryWriter writer)
+        public void Serialize(TimeValue<InputValue> iv, System.IO.BinaryWriter writer)
         {
-            var iv = (InputValue)obj;
-
-            writer.Write(iv.Id);
-            writer.Write(iv.Value);
-            writer.Write(iv.UTCFrom.ToBinary());
-            writer.Write(iv.UTCTo.ToBinary());
-            writer.Write(iv.IsDeletedValue);
-            writer.Write(iv.ImportEventId);
-            writer.Write(iv.ObsolescenceEventId);
+            writer.Write(iv.Value.Id);
+            writer.Write(iv.Value.Value);
+            writer.Write(iv.Value.UTCFrom.ToBinary());
+            writer.Write(iv.Value.UTCTo.ToBinary());
+            writer.Write(iv.Value.IsDeletedValue);
+            writer.Write(iv.Value.ImportEventId);
+            writer.Write(iv.Value.ObsolescenceEventId);
         }
 
         public int SingleElementSizeInBytes()
@@ -100,7 +99,7 @@ namespace ImportOnEnergy
         }
     }
 
-    public struct InputValue : ITimeValue
+    public struct InputValue
     {
         public long Id { get; set; }
         public double Value { get; set; }

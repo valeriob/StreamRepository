@@ -19,6 +19,12 @@ namespace StreamRepository
             return new TimeValue<Event>(timestamp, evnt);
         }
 
+        public LazyTimeValue<Event> DeserializeLazy(byte[] raw)
+        {
+            var timestamp = DateTime.FromBinary(BitConverter.ToInt64(raw, 0));
+            return new LazyTimeValue<Event>(timestamp, raw, this);
+        }
+
 
         public void Serialize(TimeValue<Event> evnt, BinaryWriter writer)
         {

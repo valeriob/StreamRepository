@@ -13,6 +13,9 @@ namespace StreamRepository
 
         IEnumerable<TimeValue<T>> GetValues(DateTime? from = null, DateTime? to = null);
 
+        [Obsolete("esperimento : no benefit")]
+        IEnumerable<LazyTimeValue<T>> GetLazyValues(DateTime? from = null, DateTime? to = null);
+
         IEnumerable<byte[]> GetRawValues(DateTime? from = null, DateTime? to = null);
 
         void HintSamplingPeriod(int samplingPeriodInSeconds);
@@ -24,6 +27,8 @@ namespace StreamRepository
     public interface ISerializeTimeValue<T>
     {
         TimeValue<T> Deserialize(BinaryReader reader);
+
+        LazyTimeValue<T> DeserializeLazy(byte[] raw);
         void Serialize(TimeValue<T> obj, BinaryWriter writer);
 
         int SingleElementSizeInBytes();
@@ -31,7 +36,7 @@ namespace StreamRepository
         //object Deserialize2(BinaryReader reader, int lenght);
     }
 
-    public class TimeValue<T>
+    public struct TimeValue<T>
     {
         public DateTime Timestamp { get; private set; }
         public T Value { get; private set; }

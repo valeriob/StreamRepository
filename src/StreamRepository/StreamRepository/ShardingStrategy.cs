@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace StreamRepository
 {
-    public interface ShardingStrategy<T> where T : TimeValue<T>
+    public interface ShardingStrategy<T>
     {
         IEnumerable<ShardWithValues<T>> Shard(IEnumerable<TimeValue<T>> values);
 
@@ -30,7 +30,7 @@ namespace StreamRepository
 
     [Export(typeof(ShardingStrategy<>))]
     [Guid("8308DEEC-DDDB-4719-B6C7-DF9233E3AFBB")]
-    public class NoShardingStrategy<T> : ShardingStrategy<T> where T : TimeValue<T>
+    public class NoShardingStrategy<T> : ShardingStrategy<T>
     {
         public IEnumerable<ShardWithValues<T>> Shard(IEnumerable<TimeValue<T>> values)
         {

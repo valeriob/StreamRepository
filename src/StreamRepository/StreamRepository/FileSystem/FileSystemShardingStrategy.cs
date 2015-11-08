@@ -84,6 +84,8 @@ namespace StreamRepository.FileSystem
         {
             foreach (var file in files)
             {
+                if (file.Name.StartsWith("sharding-"))
+                    continue;
                 var tokens = file.Name.Split('-');
 
                 int year = int.Parse(tokens[0]);

@@ -97,6 +97,11 @@ namespace ImportOnEnergy
             }
             return result;
         }
+
+        public LazyTimeValue<InputValue> DeserializeLazy(byte[] raw)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public struct InputValue

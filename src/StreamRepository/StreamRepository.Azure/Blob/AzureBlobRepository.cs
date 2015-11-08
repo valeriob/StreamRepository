@@ -62,6 +62,11 @@ namespace StreamRepository.Azure.Blob
             }
         }
 
+        public IEnumerable<LazyTimeValue<T>> GetLazyValues(DateTime? from, DateTime? to)
+        {
+            throw new NotImplementedException();
+        }
+
         IEnumerable<TimeValue<T>> FetchShard(string name)
         {
             var task = OpenBlobAsync(name);

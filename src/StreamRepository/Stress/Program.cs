@@ -36,7 +36,7 @@ namespace Stress
             /*---------------     FS -------------*/
             var filePath = @"e:\temp\Amadori";
             var ff = new FileSystemFactory<Event>(new FileSystemShardingStrategy<Event>[] { new FileSystemPerYearShardingStrategy<Event>(), new FileSystemPerMonthShardingStrategy<Event>() }, new EventBuilder());
-            Account<Event> account = new FileSystemAccount<Event>(filePath, ff, new FileSystemPerYearShardingStrategy<Event>());
+            Account<Event> account = new FileSystemAccount<Event>(filePath, ff, new FileSystemPerMonthShardingStrategy<Event>());
 
             /*---------------  AZURE  -------------*/
             //var azureAccount = new CloudStorageAccount(new StorageCredentials("valeriob", "2SzgTAaG11U0M1gQ19SNus/vv1f0efwYOwZHL1w9YhTKEYsU1ul+s/ke92DOE1wIeCKYz5CuaowtDceUvZW2Rw=="), true);
@@ -67,12 +67,12 @@ namespace Stress
 
 
 
-            watch = Stopwatch.StartNew();
-            account.Reset();
+            //watch = Stopwatch.StartNew();
+            //account.Reset();
            
-            account.Write_Streams(1, 1, OgniMinuto, (date) => new TimeValue<Event>(date, new Event(date, random.NextDouble(), random.Next(100))));
-            watch.Stop();
-            Console.WriteLine(watch.Elapsed);
+            //account.Write_Streams(10, 1, OgniMinuto, (date) => new TimeValue<Event>(date, new Event(date, random.NextDouble(), random.Next(100))));
+            //watch.Stop();
+            //Console.WriteLine(watch.Elapsed);
 
             watch = Stopwatch.StartNew();
             account.Read_Streams();

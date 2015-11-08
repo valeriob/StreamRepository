@@ -12,7 +12,7 @@ namespace StreamRepository.Azure.Blob
 {
     public interface AzureBlobShardingStrategy<T>
     {
-        IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values);
+        IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
 
@@ -22,7 +22,7 @@ namespace StreamRepository.Azure.Blob
     public class AzureBlobPerYearShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
@@ -83,7 +83,7 @@ namespace StreamRepository.Azure.Blob
     public class AzureBlobPerMonthShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }

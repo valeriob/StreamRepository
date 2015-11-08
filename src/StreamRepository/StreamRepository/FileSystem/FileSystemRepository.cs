@@ -30,7 +30,7 @@ namespace StreamRepository.FileSystem
 
         public async Task AppendValues(TimeValue<T>[] values)
         {
-            foreach (var shard in _sharding.Shard(values))
+            foreach (var shard in _sharding.ShardValues(values))
             {
                 var group = shard.GetValues();
                 var name = shard.GetName();

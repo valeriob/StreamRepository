@@ -13,8 +13,6 @@ namespace StreamRepository.FileSystem
 
     public class FileSystemFactory<T>
     {
-       
-        //IEnumerable<FileSystemShardingStrategy> _strategies;
         Dictionary<string, FileSystemShardingStrategy<T>> _strategies;
         ISerializeTimeValue<T> _builder;
 

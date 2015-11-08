@@ -11,7 +11,7 @@ namespace StreamRepository.FileSystem
 {
     public interface FileSystemShardingStrategy<T>
     {
-        IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values);
+        IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
     }
@@ -21,7 +21,7 @@ namespace StreamRepository.FileSystem
     public class FileSystemPerYearShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
@@ -75,7 +75,7 @@ namespace StreamRepository.FileSystem
     [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
     public class FileSystemPerMonthShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
-        public IEnumerable<ShardWithValues<T>> Shard(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }

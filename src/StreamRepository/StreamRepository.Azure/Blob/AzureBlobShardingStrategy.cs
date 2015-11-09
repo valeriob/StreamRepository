@@ -1,12 +1,8 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+
 
 namespace StreamRepository.Azure.Blob
 {
@@ -15,10 +11,9 @@ namespace StreamRepository.Azure.Blob
         IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
-
+        string GetId();
     }
-    [Export(typeof(ShardingStrategy<>))]
-    [Guid("0F87CB4A-13D4-4991-98FA-58EA5B95DE73")]
+
     public class AzureBlobPerYearShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
@@ -48,9 +43,9 @@ namespace StreamRepository.Azure.Blob
             return (from == null || from.Value.Year <= year) && (to == null || to.Value.Year >= year);
         }
 
-        public Guid GetId()
+        public string GetId()
         {
-            return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
+            return Guid.Parse("0F87CB4A-13D4-4991-98FA-58EA5B95DE73").ToString();
         }
 
         public class YearGroup : ShardWithValues<T>
@@ -78,8 +73,6 @@ namespace StreamRepository.Azure.Blob
         }
     }
 
-    [Export(typeof(ShardingStrategy<>))]
-    [Guid("1D267B88-B620-4584-8C17-46B2B648FB20")]
     public class AzureBlobPerMonthShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
@@ -111,9 +104,9 @@ namespace StreamRepository.Azure.Blob
             return (from == null || from.Value < date) && (to == null || to.Value > date);
         }
 
-        public Guid GetId()
+        public string GetId()
         {
-            return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
+            return Guid.Parse("1D267B88-B620-4584-8C17-46B2B648FB20").ToString();
         }
 
         public class MonthGroup : ShardWithValues<T>

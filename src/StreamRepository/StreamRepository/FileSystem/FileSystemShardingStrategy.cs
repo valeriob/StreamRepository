@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace StreamRepository.FileSystem
 {
@@ -14,11 +11,11 @@ namespace StreamRepository.FileSystem
         IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
 
         IEnumerable<FileInfo> FilterFiles(IEnumerable<FileInfo> files, DateTime? from = null, DateTime? to = null);
+
+        string GetId();
     }
 
 
-    [Export(typeof(ShardingStrategy<>))]
-    [Guid("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0")]
     public class FileSystemPerYearShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
 
@@ -35,14 +32,9 @@ namespace StreamRepository.FileSystem
 
                 if (Shard_Is_In_Between(from, to, year))
                     yield return file;
-                    //yield return new YearGroup(year, null);
             }
         }
 
-        public Guid GetId()
-        {
-            return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
-        }
         bool Shard_Is_In_Between(DateTime? from, DateTime? to, int year)
         {
             if (from == null && to == null)
@@ -50,6 +42,10 @@ namespace StreamRepository.FileSystem
             return (from == null || from.Value.Year < year) && (to == null || to.Value.Year > year);
         }
 
+        public string GetId()
+        {
+            return Guid.Parse("9C2880C1-16D7-4D90-8D37-CC3D7231EAB0").ToString();
+        }
         public class YearGroup : ShardWithValues<T>
         {
             int _year;
@@ -73,8 +69,6 @@ namespace StreamRepository.FileSystem
         }
     }
 
-    [Export(typeof(ShardingStrategy<>))]
-    [Guid("CAABA129-479F-4F36-B5B9-B08C59EEB6CF")]
     public class FileSystemPerMonthShardingStrategy<T> : FileSystemShardingStrategy<T>
     {
         public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
@@ -108,9 +102,10 @@ namespace StreamRepository.FileSystem
             return (from == null || from.Value < date) && (to == null || to.Value > date);
         }
 
-        public Guid GetId()
+
+        public string GetId()
         {
-            return Guid.Parse(GetType().GetAttribute<GuidAttribute>().Value);
+            return Guid.Parse("CAABA129-479F-4F36-B5B9-B08C59EEB6CF").ToString();
         }
 
         public class MonthGroup : ShardWithValues<T>

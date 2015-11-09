@@ -1,11 +1,7 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StreamRepository.Azure.Blob
 {
@@ -34,7 +30,7 @@ namespace StreamRepository.Azure.Blob
 
             if (!blobs.Any())
             {
-                var id = GetId(sharding);
+                var id = sharding.GetId();
                 var factoryBlob = directory.GetPageBlobReference(Get_Factory_Blob(directory, id.ToString()));
                 factoryBlob.Create(0);
             }
@@ -56,21 +52,11 @@ namespace StreamRepository.Azure.Blob
         }
 
 
-        Guid GetId(object obj)
-        {
-            var att = obj.GetType().GetCustomAttributes(typeof(GuidAttribute), true)
-                .OfType<GuidAttribute>().FirstOrDefault();
-            if (att == null)
-                throw new Exception();
-
-            return Guid.Parse(att.Value);
-        }
-
 
         AzureBlobShardingStrategy<T> BuildShardingStrategy(string id)
         {
             foreach (var s in _strategies)
-                if (GetId(s).ToString() == id)
+                if (s.GetId() == id)
                     return s;
 
             throw new Exception("Strategy not found");

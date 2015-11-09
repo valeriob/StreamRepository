@@ -18,7 +18,7 @@ namespace StreamRepository.FileSystem
 
         public FileSystemFactory(IEnumerable<FileSystemShardingStrategy<T>> strategies, ISerializeTimeValue<T> builder)
         {
-            _strategies = strategies.ToDictionary(d => GetId(d).ToString(), r=> r);
+            _strategies = strategies.ToDictionary(d => d.GetId(), r => r);
             _builder = builder;
         }
 
@@ -31,9 +31,9 @@ namespace StreamRepository.FileSystem
 
             if (!files.Any())
             {
-                var id = GetId(sharding);
+                var id = sharding.GetId();
                 var path = Path.Combine(directory.FullName, Consts.Sharding + id);
-                using (new FileInfo(path).Create()) ;
+                using (new FileInfo(path).Create()) { }
             }
             else
             {
@@ -52,30 +52,11 @@ namespace StreamRepository.FileSystem
             return !directory.Exists;
         }
 
-        Guid GetId(object obj)
-        {
-            var att = obj.GetType().GetCustomAttributes(typeof(GuidAttribute), true)
-                .OfType<GuidAttribute>().FirstOrDefault();
-            if (att == null)
-                throw new Exception();
-
-            return Guid.Parse(att.Value);
-        }
-
 
         FileSystemShardingStrategy<T> BuildShardingStrategy(string id)
         {
             return _strategies[id];
         }
-
-        //FileSystemShardingStrategy BuildShardingStrategy(string id)
-        //{
-        //    foreach (var s in _strategies)
-        //        if (GetId(s).ToString() == id)
-        //            return s.v;
-
-        //    throw new Exception("Strategy not found");
-        //}
 
     }
 

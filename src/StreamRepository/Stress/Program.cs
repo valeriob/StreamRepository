@@ -34,7 +34,7 @@ namespace Stress
             //Console.WriteLine("cpu speed : " + watch.Elapsed);
 
             /*---------------     FS -------------*/
-            var filePath = @"e:\temp\Amadori";
+            var filePath = @"d:\temp\Amadori";
             var ff = new FileSystemFactory<Event>(new FileSystemShardingStrategy<Event>[] { new FileSystemPerYearShardingStrategy<Event>(), new FileSystemPerMonthShardingStrategy<Event>() }, new EventBuilder());
             Account<Event> account = new FileSystemAccount<Event>(filePath, ff, new FileSystemPerMonthShardingStrategy<Event>());
 
@@ -69,8 +69,8 @@ namespace Stress
 
             //watch = Stopwatch.StartNew();
             //account.Reset();
-           
-            //account.Write_Streams(10, 1, OgniMinuto, (date) => new TimeValue<Event>(date, new Event(date, random.NextDouble(), random.Next(100))));
+
+            //account.Write_Streams(10, 1, OgniMinuto, (date) => new Event(date, random.NextDouble(), random.Next(100)));
             //watch.Stop();
             //Console.WriteLine(watch.Elapsed);
 

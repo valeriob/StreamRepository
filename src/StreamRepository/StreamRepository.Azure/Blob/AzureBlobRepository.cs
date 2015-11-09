@@ -29,7 +29,7 @@ namespace StreamRepository.Azure.Blob
         }
 
 
-        public async Task AppendValues(TimeValue<T>[] values)
+        public async Task AppendValues(ITimeValue<T>[] values)
         {
             foreach (var shard in _sharding.ShardValues(values))
             {
@@ -50,7 +50,7 @@ namespace StreamRepository.Azure.Blob
         }
 
 
-        public IEnumerable<TimeValue<T>> GetValues(DateTime? from, DateTime? to)
+        public IEnumerable<ITimeValue<T>> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var shard in _sharding.GetShards(_directory.ListBlobs(), from, to))
             {
@@ -67,7 +67,7 @@ namespace StreamRepository.Azure.Blob
             throw new NotImplementedException();
         }
 
-        IEnumerable<TimeValue<T>> FetchShard(string name)
+        IEnumerable<ITimeValue<T>> FetchShard(string name)
         {
             var task = OpenBlobAsync(name);
             task.Wait();

@@ -35,7 +35,7 @@ namespace StreamRepository
             Console.WriteLine("read {0} values in {1} streams in {2}", values, streams, watch.Elapsed);
         }
 
-        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds, Func<DateTime, TimeValue<T>> buildEvent)
+        public void Write_Streams(int streams, int years, int samplingPeriodInSeconds, Func<DateTime, ITimeValue<T>> buildEvent)
         {
             var options = new ParallelOptions
             {
@@ -59,7 +59,7 @@ namespace StreamRepository
             //});
         }
 
-        public void Write_Stream(string name, int years, int samplingPeriodInSeconds, Func<DateTime, TimeValue<T>> buildEvent)
+        public void Write_Stream(string name, int years, int samplingPeriodInSeconds, Func<DateTime, ITimeValue<T>> buildEvent)
         {
             var repository = BuildRepository(name);
 
@@ -68,7 +68,7 @@ namespace StreamRepository
         }
 
         public void Write_Year(Repository<T> repository, int year, int samplingPeriodInSeconds,
-            Func<DateTime, TimeValue<T>> buildEvent)
+            Func<DateTime, ITimeValue<T>> buildEvent)
         {
             var random = new Random();
             var since = new DateTime(year, 1, 1);
@@ -77,7 +77,7 @@ namespace StreamRepository
 
             int samples = (365 * 24 * 60 * 60) / samplingPeriodInSeconds;
             //batchSize = int.MaxValue;
-            var batch = new TimeValue<T>[batchSize];
+            var batch = new ITimeValue<T>[batchSize];
 
             repository.HintSamplingPeriod(samples);
             for (int i = 0; i < samples; i++)
@@ -85,7 +85,7 @@ namespace StreamRepository
                 if (i % batchSize == 0 && i != 0)
                 {
                     repository.AppendValues(batch).Wait();
-                    batch = new TimeValue<T>[batchSize];
+                    batch = new ITimeValue<T>[batchSize];
 
                     var remaining = TimeSpan.FromTicks((watch.Elapsed.Ticks / i) * (samples - i));
                     //Console.WriteLine("{0} / {1},  {2:0} %    remaining : {3}", i, samples, ((double)i / samples) * 100, remaining);
@@ -93,7 +93,7 @@ namespace StreamRepository
 
                 batch[i % batchSize] = buildEvent(since.AddSeconds(samplingPeriodInSeconds));
             }
-            var asd = new ArraySegment<TimeValue<T>>(batch, 0, samples % batchSize).ToArray();
+            var asd = new ArraySegment<ITimeValue<T>>(batch, 0, samples % batchSize).ToArray();
             repository.AppendValues(asd).Wait();
 
             watch.Stop();

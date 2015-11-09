@@ -9,14 +9,13 @@ namespace StreamRepository
 {
     public class EventBuilder : ISerializeTimeValue<Event>
     {
-        public TimeValue<Event> Deserialize(BinaryReader reader)
+        public ITimeValue<Event> Deserialize(BinaryReader reader)
         {
             var timestamp = DateTime.FromBinary(reader.ReadInt64());
             var value = reader.ReadDouble();
             var importId = reader.ReadInt32();
 
-            var evnt = new Event(timestamp, value, importId);
-            return new TimeValue<Event>(timestamp, evnt);
+            return new Event(timestamp, value, importId);
         }
 
         public LazyTimeValue<Event> DeserializeLazy(byte[] raw)
@@ -26,11 +25,11 @@ namespace StreamRepository
         }
 
 
-        public void Serialize(TimeValue<Event> evnt, BinaryWriter writer)
+        public void Serialize(ITimeValue<Event> evnt, BinaryWriter writer)
         {
-            writer.Write(evnt.Value.Timestamp.ToBinary());
-            writer.Write(evnt.Value.Value);
-            writer.Write(evnt.Value.ImportId);
+            writer.Write(evnt.Timestamp.ToBinary());
+            writer.Write(evnt.Payload.Value);
+            writer.Write(evnt.Payload.ImportId);
         }
 
         public int SingleElementSizeInBytes()
@@ -46,9 +45,18 @@ namespace StreamRepository
         }
     }
 
-    public class Event
+    public struct Event : ITimeValue<Event>
     {
         public DateTime Timestamp { get; private set; }
+
+        public Event Payload
+        {
+            get
+            {
+                return this;
+            }
+        }
+
         public double Value { get; private set; }
         public int ImportId { get; private set; }
 

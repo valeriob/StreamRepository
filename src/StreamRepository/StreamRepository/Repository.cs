@@ -9,9 +9,9 @@ namespace StreamRepository
 {
     public interface Repository<T>
     {
-        Task AppendValues(TimeValue<T>[] values);
+        Task AppendValues(ITimeValue<T>[] values);
 
-        IEnumerable<TimeValue<T>> GetValues(DateTime? from = null, DateTime? to = null);
+        IEnumerable<ITimeValue<T>> GetValues(DateTime? from = null, DateTime? to = null);
 
         [Obsolete("esperimento : no benefit")]
         IEnumerable<LazyTimeValue<T>> GetLazyValues(DateTime? from = null, DateTime? to = null);
@@ -26,26 +26,33 @@ namespace StreamRepository
 
     public interface ISerializeTimeValue<T>
     {
-        TimeValue<T> Deserialize(BinaryReader reader);
+        ITimeValue<T> Deserialize(BinaryReader reader);
 
         LazyTimeValue<T> DeserializeLazy(byte[] raw);
-        void Serialize(TimeValue<T> obj, BinaryWriter writer);
+        void Serialize(ITimeValue<T> obj, BinaryWriter writer);
 
         int SingleElementSizeInBytes();
 
         //object Deserialize2(BinaryReader reader, int lenght);
     }
 
-    public struct TimeValue<T>
-    {
-        public DateTime Timestamp { get; private set; }
-        public T Value { get; private set; }
+    //public struct TimeValue<T>
+    //{
+    //    public DateTime Timestamp { get; private set; }
+    //    public T Value { get; private set; }
 
-        public TimeValue(DateTime timestamp, T value)
-        {
-            Timestamp = timestamp;
-            Value = value;
-        }
+    //    public TimeValue(DateTime timestamp, T value)
+    //    {
+    //        Timestamp = timestamp;
+    //        Value = value;
+    //    }
+    //}
+
+    public interface ITimeValue<T>
+    {
+        DateTime Timestamp { get; }
+
+       T Payload { get; }
     }
 
     public class LazyTimeValue<T>
@@ -59,7 +66,7 @@ namespace StreamRepository
         {
             if(_value == null)
             {
-                _value = _serializer.Deserialize(new BinaryReader(new MemoryStream(_payload))).Value;
+                _value = _serializer.Deserialize(new BinaryReader(new MemoryStream(_payload))).Payload;
             }
             return _value;
         }

@@ -54,7 +54,7 @@ namespace ImportOnEnergy
         void TryImportStream(int id)
         {
             Repository<InputValue> repository = null;
-            var events = Enumerable.Empty<TimeValue<InputValue>>();
+            var events = Enumerable.Empty<ITimeValue<InputValue>>();
             while (true)
             {
                 try
@@ -89,20 +89,20 @@ namespace ImportOnEnergy
             }
         }
 
-        public IEnumerable<TimeValue<InputValue>> LoadEventsForStream(int id, IDbConnection con)
+        public IEnumerable<ITimeValue<InputValue>> LoadEventsForStream(int id, IDbConnection con)
         {
             string query = @"SELECT Id, Value, StreamId, ObsolescenceEventId, UTCFrom, IsDeletedValue, ImportEventId, UTCTo from InputValue
                     WHERE StreamId = @StreamId";
 
             var parameters = new[] { Tuple.Create<string, object>("StreamId", id) };
 
-            var result = new List<TimeValue<InputValue>>();
+            var result = new List<ITimeValue<InputValue>>();
             using (var cmd = Prepare(con, query, parameters))
             using (var reader = cmd.ExecuteReader(CommandBehavior.SingleResult))
                 while (reader.Read())
                 {
                     var ev = reader.ToInputValue();
-                    result.Add(new TimeValue<InputValue>(ev.UTCTo, ev));
+                    result.Add(ev);
                 }
             return result;
         }

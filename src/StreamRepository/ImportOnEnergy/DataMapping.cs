@@ -46,7 +46,7 @@ namespace ImportOnEnergy
 
     public class InputValueBuilder : ISerializeTimeValue<InputValue>
     {
-        public TimeValue<InputValue> Deserialize(System.IO.BinaryReader reader)
+        public ITimeValue<InputValue> Deserialize(System.IO.BinaryReader reader)
         {
             var iv = new InputValue
             {
@@ -58,18 +58,19 @@ namespace ImportOnEnergy
                 ImportEventId = reader.ReadInt64(),
                 ObsolescenceEventId = reader.ReadInt64(),
             };
-            return new TimeValue<InputValue>(iv.UTCTo, iv);
+            return iv;
+            //return new TimeValue<InputValue>(iv.UTCTo, iv);
         }
 
-        public void Serialize(TimeValue<InputValue> iv, System.IO.BinaryWriter writer)
+        public void Serialize(ITimeValue<InputValue> iv, System.IO.BinaryWriter writer)
         {
-            writer.Write(iv.Value.Id);
-            writer.Write(iv.Value.Value);
-            writer.Write(iv.Value.UTCFrom.ToBinary());
-            writer.Write(iv.Value.UTCTo.ToBinary());
-            writer.Write(iv.Value.IsDeletedValue);
-            writer.Write(iv.Value.ImportEventId);
-            writer.Write(iv.Value.ObsolescenceEventId);
+            writer.Write(iv.Payload.Id);
+            writer.Write(iv.Payload.Value);
+            writer.Write(iv.Payload.UTCFrom.ToBinary());
+            writer.Write(iv.Payload.UTCTo.ToBinary());
+            writer.Write(iv.Payload.IsDeletedValue);
+            writer.Write(iv.Payload.ImportEventId);
+            writer.Write(iv.Payload.ObsolescenceEventId);
         }
 
         public int SingleElementSizeInBytes()
@@ -104,7 +105,7 @@ namespace ImportOnEnergy
         }
     }
 
-    public struct InputValue
+    public struct InputValue : ITimeValue<InputValue>
     {
         public long Id { get; set; }
         public double Value { get; set; }
@@ -118,6 +119,14 @@ namespace ImportOnEnergy
         public DateTime Timestamp
         {
             get { return UTCTo; }
+        }
+
+        public InputValue Payload
+        {
+            get
+            {
+                return this;
+            }
         }
     }
 }

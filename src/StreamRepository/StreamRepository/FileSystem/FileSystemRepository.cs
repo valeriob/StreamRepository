@@ -28,7 +28,7 @@ namespace StreamRepository.FileSystem
         }
 
 
-        public async Task AppendValues(TimeValue<T>[] values)
+        public async Task AppendValues(ITimeValue<T>[] values)
         {
             foreach (var shard in _sharding.ShardValues(values))
             {
@@ -36,7 +36,7 @@ namespace StreamRepository.FileSystem
                 var name = shard.GetName();
                 var header = ReadHeader(name);
                 DateTime lastEventTimestamp = header.LastEventTimestamp;
-                Nullable<TimeValue<T>> lastEvent = null;
+                ITimeValue<T> lastEvent = null;
 
                 using (var stream = Open_Stream_For_Writing(name))
                 {
@@ -72,7 +72,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        public IEnumerable<TimeValue<T>> GetValues(DateTime? from, DateTime? to)
+        public IEnumerable<ITimeValue<T>> GetValues(DateTime? from, DateTime? to)
         {
             foreach (var files in _sharding.FilterFiles(_directory.GetFiles(), from, to))
             {
@@ -95,7 +95,7 @@ namespace StreamRepository.FileSystem
             }
         }
 
-        IEnumerable<TimeValue<T>> FetchShard(string shardName)
+        IEnumerable<ITimeValue<T>> FetchShard(string shardName)
         {
             using (var file = Open_Stream_For_Reading(shardName))
             {
@@ -203,7 +203,7 @@ namespace StreamRepository.FileSystem
         FileInfo Get_FileInfo(string name)
         {
             foreach (var file in _directory.GetFiles())
-                if (file.Name == name)
+                if (file.FullName == name)
                     return file;
 
             var path = Path.Combine(_directory.FullName, name);

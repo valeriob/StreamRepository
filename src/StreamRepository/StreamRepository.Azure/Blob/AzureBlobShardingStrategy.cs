@@ -8,7 +8,7 @@ namespace StreamRepository.Azure.Blob
 {
     public interface AzureBlobShardingStrategy<T>
     {
-        IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values);
+        IEnumerable<ShardWithValues<T>> ShardValues(ITimeValue<T>[] values);
 
         IEnumerable<Shard> GetShards(IEnumerable<IListBlobItem> blobs, DateTime? from = null, DateTime? to = null);
         string GetId();
@@ -17,7 +17,7 @@ namespace StreamRepository.Azure.Blob
     public class AzureBlobPerYearShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(ITimeValue<T>[] values)
         {
             return values.GroupBy(g => g.Timestamp.Year).Select(g => new YearGroup(g.Key, g.ToArray()));
         }
@@ -51,17 +51,17 @@ namespace StreamRepository.Azure.Blob
         public class YearGroup : ShardWithValues<T>
         {
             int _year;
-            TimeValue<T>[] _values;
+            ITimeValue<T>[] _values;
             public int Year { get { return _year; } }
 
 
-            public YearGroup(int year, TimeValue<T>[] values)
+            public YearGroup(int year, ITimeValue<T>[] values)
             {
                 _year = year;
                 _values = values;
             }
 
-            public TimeValue<T>[] GetValues()
+            public ITimeValue<T>[] GetValues()
             {
                 return _values;
             }
@@ -76,7 +76,7 @@ namespace StreamRepository.Azure.Blob
     public class AzureBlobPerMonthShardingStrategy<T> : AzureBlobShardingStrategy<T>
     {
 
-        public IEnumerable<ShardWithValues<T>> ShardValues(TimeValue<T>[] values)
+        public IEnumerable<ShardWithValues<T>> ShardValues(ITimeValue<T>[] values)
         {
             return values.GroupBy(g => new { g.Timestamp.Year, g.Timestamp.Month }).Select(g => new MonthGroup(g.Key.Year, g.Key.Month, g.ToArray()));
         }
@@ -113,16 +113,16 @@ namespace StreamRepository.Azure.Blob
         {
             int _year;
             int _month;
-            TimeValue<T>[] _values;
+            ITimeValue<T>[] _values;
 
-            public MonthGroup(int year, int month, TimeValue<T>[] values)
+            public MonthGroup(int year, int month, ITimeValue<T>[] values)
             {
                 _year = year;
                 _month = month;
                 _values = values;
             }
 
-            public TimeValue<T>[] GetValues()
+            public ITimeValue<T>[] GetValues()
             {
                 return _values;
             }
